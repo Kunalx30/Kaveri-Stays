@@ -18,6 +18,11 @@ from app.schemas.room_type import (
     RoomTypeUpdate,
     RoomTypeResponse
 )
+from app.schemas.room import (
+    RoomCreate,
+    RoomUpdate,
+    RoomResponse
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -33,5 +38,8 @@ __all__ = [
     "RoomTypeBase",
     "RoomTypeCreate",
     "RoomTypeUpdate",
-    "RoomTypeResponse"
+    "RoomTypeResponse",
+    "RoomCreate",
+    "RoomUpdate",
+    "RoomResponse"
 ]
