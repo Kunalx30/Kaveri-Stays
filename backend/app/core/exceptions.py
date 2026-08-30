@@ -1,7 +1,10 @@
 """Custom exceptions and database error handlers."""
+import logging
 from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
+
+logger = logging.getLogger("kaveri_stays.errors")
 
 
 class DoubleBookingConflictException(HTTPException):
@@ -46,7 +49,21 @@ async def integrity_error_handler(request: Request, exc: IntegrityError):
             content={"detail": "A uniqueness constraint was violated."}
         )
     
+    logger.error(f"Unhandled Database Integrity Violation on {request.method} {request.url.path}: {exc}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"detail": "Database integrity constraint violation."}
     )
+
+
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Centralized catch-all handler for unexpected server errors (HTTP 500).
+    Logs the full internal error and stacktrace safely without leaking details to clients.
+    """
+    logger.error(f"Unhandled Server Exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "An internal server error occurred. Please try again later."}
+    )
+

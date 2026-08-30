@@ -1,6 +1,10 @@
+from pathlib import Path
 from typing import List, Union
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = BASE_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -32,8 +36,12 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    # Rate Limiting & Security Settings
+    AUTH_RATE_LIMIT_PER_MINUTE: int = 120
+    ENABLE_SECURITY_HEADERS: bool = True
+
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(str(ENV_FILE), ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"

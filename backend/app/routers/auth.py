@@ -14,12 +14,13 @@ from app.schemas.auth import (
     UserResponse,
     AuthResponse
 )
+from app.core.rate_limit import check_auth_rate_limit
 from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(check_auth_rate_limit)])
 def register(
     data: UserRegisterRequest,
     db: Session = Depends(get_db)
@@ -34,7 +35,7 @@ def register(
     return auth_service.register_guest(db, data)
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login", response_model=AuthResponse, dependencies=[Depends(check_auth_rate_limit)])
 def login(
     data: UserLoginRequest,
     db: Session = Depends(get_db)
@@ -46,7 +47,7 @@ def login(
     return auth_service.authenticate_user(db, data)
 
 
-@router.post("/token", response_model=TokenResponse)
+@router.post("/token", response_model=TokenResponse, dependencies=[Depends(check_auth_rate_limit)])
 def swagger_login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
@@ -65,7 +66,7 @@ def swagger_login(
     return auth_response.tokens
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=TokenResponse, dependencies=[Depends(check_auth_rate_limit)])
 def refresh_token(
     data: RefreshTokenRequest,
     db: Session = Depends(get_db)
