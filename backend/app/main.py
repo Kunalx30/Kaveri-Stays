@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.config import settings
 from app.database import get_db
 from app.core.exceptions import integrity_error_handler
-from app.routers import auth_router
+from app.routers import auth_router, properties_router, room_types_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -30,6 +30,8 @@ app.add_middleware(
 
 # Mount API Routers
 app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(properties_router, prefix=settings.API_V1_STR)
+app.include_router(room_types_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["Health"])

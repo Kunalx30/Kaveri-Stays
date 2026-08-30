@@ -6,6 +6,18 @@ from app.schemas.auth import (
     UserResponse,
     AuthResponse
 )
+from app.schemas.property import (
+    PropertyBase,
+    PropertyCreate,
+    PropertyUpdate,
+    PropertyResponse
+)
+from app.schemas.room_type import (
+    RoomTypeBase,
+    RoomTypeCreate,
+    RoomTypeUpdate,
+    RoomTypeResponse
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -13,5 +25,13 @@ __all__ = [
     "TokenResponse",
     "RefreshTokenRequest",
     "UserResponse",
-    "AuthResponse"
+    "AuthResponse",
+    "PropertyBase",
+    "PropertyCreate",
+    "PropertyUpdate",
+    "PropertyResponse",
+    "RoomTypeBase",
+    "RoomTypeCreate",
+    "RoomTypeUpdate",
+    "RoomTypeResponse"
 ]
