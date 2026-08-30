@@ -47,6 +47,11 @@ from app.schemas.review import (
     ReviewUpdate,
     ReviewResponse
 )
+from app.schemas.availability import (
+    AvailabilityRequest,
+    AvailableRoomResponse,
+    AvailabilityResponse
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -81,5 +86,8 @@ __all__ = [
     "ReviewBase",
     "ReviewCreate",
     "ReviewUpdate",
-    "ReviewResponse"
+    "ReviewResponse",
+    "AvailabilityRequest",
+    "AvailableRoomResponse",
+    "AvailabilityResponse"
 ]

@@ -13,7 +13,8 @@ from app.routers import (
     rate_plans_router,
     bookings_router,
     payments_router,
-    reviews_router
+    reviews_router,
+    availability_router
 )
 
 app = FastAPI(
@@ -46,6 +47,7 @@ app.include_router(rate_plans_router, prefix=settings.API_V1_STR)
 app.include_router(bookings_router, prefix=settings.API_V1_STR)
 app.include_router(payments_router, prefix=settings.API_V1_STR)
 app.include_router(reviews_router, prefix=settings.API_V1_STR)
+app.include_router(availability_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["Health"])

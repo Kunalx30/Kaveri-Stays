@@ -6,6 +6,7 @@ from app.routers.rate_plans import router as rate_plans_router
 from app.routers.bookings import router as bookings_router
 from app.routers.payments import router as payments_router
 from app.routers.reviews import router as reviews_router
+from app.routers.availability import router as availability_router
 
 __all__ = [
     "auth_router",
@@ -15,5 +16,6 @@ __all__ = [
     "rate_plans_router",
     "bookings_router",
     "payments_router",
-    "reviews_router"
+    "reviews_router",
+    "availability_router"
 ]
