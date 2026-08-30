@@ -17,6 +17,9 @@ import MyPayments from '../pages/MyPayments';
 import CreateReview from '../pages/CreateReview';
 import EditReview from '../pages/EditReview';
 import MyReviews from '../pages/MyReviews';
+import StaffDashboard from '../pages/staff/StaffDashboard';
+import StaffBookings from '../pages/staff/StaffBookings';
+import StaffBookingDetails from '../pages/staff/StaffBookingDetails';
 import Unauthorized from '../pages/Unauthorized';
 import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -27,7 +30,8 @@ import ProtectedRoute from '../components/ProtectedRoute';
  * Phase F3: Public discovery routes
  * Phase F4: Booking creation, details, and my-bookings routes
  * Phase F5: Payments, payment details, and payment history routes
- * Phase F6: Reviews, ratings, review submission, edit, and my-reviews routes
+ * Phase F6: Reviews, ratings, and review management routes
+ * Phase F7: Staff operational dashboard, staff bookings, and staff booking details
  */
 const AppRoutes = () => {
   return (
@@ -119,6 +123,32 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <MyReviews />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Staff Operations Routes */}
+        <Route
+          path="staff"
+          element={
+            <ProtectedRoute allowedRoles={['staff', 'manager', 'owner']}>
+              <StaffDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="staff/bookings"
+          element={
+            <ProtectedRoute allowedRoles={['staff', 'manager', 'owner']}>
+              <StaffBookings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="staff/bookings/:bookingId"
+          element={
+            <ProtectedRoute allowedRoles={['staff', 'manager', 'owner']}>
+              <StaffBookingDetails />
             </ProtectedRoute>
           }
         />

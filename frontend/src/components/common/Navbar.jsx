@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Hotel, User as UserIcon, LogOut, LogIn, UserPlus,
-  LayoutDashboard, Calendar, CalendarDays, CreditCard, MessageSquare,
+  LayoutDashboard, Calendar, CalendarDays, CreditCard, MessageSquare, Briefcase,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -27,6 +27,8 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
   const isStartsWith = (prefix) => location.pathname.startsWith(prefix);
+
+  const isStaffRole = user && ['staff', 'manager', 'owner'].includes(user.role);
 
   const navLinkClass = (active) =>
     `px-2.5 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
@@ -113,6 +115,21 @@ const Navbar = () => {
               >
                 <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
                 <span>Reviews</span>
+              </Link>
+            )}
+
+            {/* Staff Operations Link (Staff / Manager / Owner) */}
+            {isAuthenticated && isStaffRole && (
+              <Link
+                to="/staff"
+                className={`flex items-center space-x-1 font-bold ${
+                  isStartsWith('/staff')
+                    ? 'text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg text-xs'
+                    : 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50/60 px-2.5 py-1.5 rounded-lg text-xs'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Staff Portal</span>
               </Link>
             )}
 
