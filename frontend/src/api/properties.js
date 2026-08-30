@@ -1,17 +1,12 @@
 import apiClient from './client';
 
 /**
- * Properties & Room Types API Module
- * Interacts with FastAPI backend endpoints:
- *   - GET /properties
- *   - GET /properties/{property_id}
- *   - GET /room-types
- *   - GET /room-types/{room_type_id}
+ * Properties API Module
+ *
+ * Public and management endpoints for properties and room types.
  */
 
-export const getPropertiesApi = async (city = null) => {
-  const params = {};
-  if (city) params.city = city;
+export const getPropertiesApi = async (params = {}) => {
   const response = await apiClient.get('/properties', { params });
   return response.data;
 };
@@ -21,12 +16,27 @@ export const getPropertyByIdApi = async (propertyId) => {
   return response.data;
 };
 
+export const createPropertyApi = async (payload) => {
+  const response = await apiClient.post('/properties', payload);
+  return response.data;
+};
+
+export const updatePropertyApi = async (propertyId, payload) => {
+  const response = await apiClient.patch(`/properties/${propertyId}`, payload);
+  return response.data;
+};
+
+export const deletePropertyApi = async (propertyId) => {
+  const response = await apiClient.delete(`/properties/${propertyId}`);
+  return response.data;
+};
+
 export const getRoomTypesApi = async () => {
   const response = await apiClient.get('/room-types');
   return response.data;
 };
 
-export const getRoomTypeByIdApi = async (roomTypeId) => {
-  const response = await apiClient.get(`/room-types/${roomTypeId}`);
+export const getAvailabilityApi = async (params) => {
+  const response = await apiClient.get('/availability', { params });
   return response.data;
 };

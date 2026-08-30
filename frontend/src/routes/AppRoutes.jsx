@@ -20,6 +20,12 @@ import MyReviews from '../pages/MyReviews';
 import StaffDashboard from '../pages/staff/StaffDashboard';
 import StaffBookings from '../pages/staff/StaffBookings';
 import StaffBookingDetails from '../pages/staff/StaffBookingDetails';
+import ManagementDashboard from '../pages/management/ManagementDashboard';
+import ManageProperties from '../pages/management/ManageProperties';
+import ManageRoomTypes from '../pages/management/ManageRoomTypes';
+import ManageRooms from '../pages/management/ManageRooms';
+import ManageRatePlans from '../pages/management/ManageRatePlans';
+import AnalyticsDashboard from '../pages/management/AnalyticsDashboard';
 import Unauthorized from '../pages/Unauthorized';
 import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -32,6 +38,8 @@ import ProtectedRoute from '../components/ProtectedRoute';
  * Phase F5: Payments, payment details, and payment history routes
  * Phase F6: Reviews, ratings, and review management routes
  * Phase F7: Staff operational dashboard, staff bookings, and staff booking details
+ * Phase F8: Management CRUD — properties, room types, rooms, rate plans
+ * Phase F9: Analytics dashboard — KPIs, booking, revenue, occupancy, reviews, property performance
  */
 const AppRoutes = () => {
   return (
@@ -149,6 +157,58 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute allowedRoles={['staff', 'manager', 'owner']}>
               <StaffBookingDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Management Routes (owner + manager) */}
+        <Route
+          path="management"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager']}>
+              <ManagementDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="management/properties"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager']}>
+              <ManageProperties />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="management/room-types"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager']}>
+              <ManageRoomTypes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="management/rooms"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager']}>
+              <ManageRooms />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="management/rate-plans"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager']}>
+              <ManageRatePlans />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Analytics Routes (owner + manager) */}
+        <Route
+          path="analytics"
+          element={
+            <ProtectedRoute allowedRoles={['owner', 'manager']}>
+              <AnalyticsDashboard />
             </ProtectedRoute>
           }
         />
