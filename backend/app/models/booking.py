@@ -110,3 +110,15 @@ class Review(Base):
 
     # Relationships
     booking = relationship("Booking", back_populates="review")
+
+    @builtins.property
+    def property_id(self):
+        return self.booking.property_id if self.booking else None
+
+    @builtins.property
+    def guest_id(self):
+        return self.booking.guest_id if self.booking else None
+
+    @builtins.property
+    def guest_name(self):
+        return self.booking.guest.full_name if (self.booking and self.booking.guest) else None

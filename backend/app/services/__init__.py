@@ -5,6 +5,7 @@ from app.services import room_service
 from app.services import rate_plan_service
 from app.services import booking_service
 from app.services import payment_service
+from app.services import review_service
 
 __all__ = [
     "auth_service",
@@ -13,5 +14,6 @@ __all__ = [
     "room_service",
     "rate_plan_service",
     "booking_service",
-    "payment_service"
+    "payment_service",
+    "review_service"
 ]

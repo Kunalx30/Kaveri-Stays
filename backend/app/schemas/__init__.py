@@ -41,6 +41,12 @@ from app.schemas.payment import (
     PaymentResponse,
     PaymentSummaryResponse
 )
+from app.schemas.review import (
+    ReviewBase,
+    ReviewCreate,
+    ReviewUpdate,
+    ReviewResponse
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -71,5 +77,9 @@ __all__ = [
     "BookingResponse",
     "PaymentCreate",
     "PaymentResponse",
-    "PaymentSummaryResponse"
+    "PaymentSummaryResponse",
+    "ReviewBase",
+    "ReviewCreate",
+    "ReviewUpdate",
+    "ReviewResponse"
 ]
