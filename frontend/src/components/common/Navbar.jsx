@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Hotel, User as UserIcon, LogOut, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
+import { Hotel, User as UserIcon, LogOut, LogIn, UserPlus, LayoutDashboard, Calendar } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
@@ -40,13 +40,13 @@ const Navbar = () => {
                 Kaveri<span className="text-blue-600">Stays</span>
               </span>
               <span className="block text-[10px] font-semibold text-slate-400 -mt-1 tracking-widest uppercase">
-                Hotel Booking & Management
+                Hotel Booking & Discovery
               </span>
             </div>
           </Link>
 
           {/* Navigation Links */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <Link
               to="/"
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -56,6 +56,29 @@ const Navbar = () => {
               }`}
             >
               Home
+            </Link>
+
+            <Link
+              to="/properties"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/properties') && !location.pathname.includes('/availability')
+                  ? 'text-blue-600 bg-blue-50 font-semibold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Properties
+            </Link>
+
+            <Link
+              to="/availability"
+              className={`hidden md:flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                location.pathname.includes('/availability')
+                  ? 'text-blue-600 bg-blue-50 font-semibold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Calendar className="w-4 h-4 text-blue-500" />
+              <span>Availability</span>
             </Link>
 
             {isAuthenticated && (
@@ -79,7 +102,7 @@ const Navbar = () => {
                   <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xs">
                     {user?.full_name?.charAt(0) || <UserIcon className="w-4 h-4" />}
                   </div>
-                  <div className="hidden md:block text-left">
+                  <div className="hidden lg:block text-left">
                     <p className="text-xs font-bold text-slate-800 leading-tight">
                       {user?.full_name}
                     </p>
