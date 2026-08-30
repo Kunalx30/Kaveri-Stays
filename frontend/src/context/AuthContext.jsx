@@ -1,48 +1,63 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import apiClient from '../api/client';
+import { loginApi, registerApi, getCurrentUserApi, logoutApi } from '../api/auth';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('kaveri_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const savedUser = localStorage.getItem('kaveri_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
   });
+
   const [accessToken, setAccessToken] = useState(() => localStorage.getItem('kaveri_access_token'));
   const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('kaveri_refresh_token'));
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize and verify user on mount
+  /**
+   * Session restoration on mount:
+   * Verifies access token with backend GET /auth/me or relies on refresh interceptor.
+   */
   useEffect(() => {
-    const initAuth = async () => {
+    const restoreSession = async () => {
       const token = localStorage.getItem('kaveri_access_token');
       if (token) {
         try {
-          const res = await apiClient.get('/auth/me');
-          setUser(res.data);
-          localStorage.setItem('kaveri_user', JSON.stringify(res.data));
+          const liveUser = await getCurrentUserApi();
+          setUser(liveUser);
+          localStorage.setItem('kaveri_user', JSON.stringify(liveUser));
         } catch {
-          // Token invalid or expired, client interceptor will attempt refresh
+          // If token verification fails and refresh also failed, state is cleared by interceptor
+          setUser(null);
+          setAccessToken(null);
+          setRefreshToken(null);
         }
       }
       setIsLoading(false);
     };
 
-    initAuth();
+    restoreSession();
 
-    // Listen for global logout events from axios interceptor
-    const handleGlobalLogout = () => {
+    // Listen for global session expiry events
+    const handleSessionExpired = () => {
       setUser(null);
       setAccessToken(null);
       setRefreshToken(null);
+      localStorage.removeItem('kaveri_user');
+      localStorage.removeItem('kaveri_access_token');
+      localStorage.removeItem('kaveri_refresh_token');
     };
-    window.addEventListener('auth:logout', handleGlobalLogout);
-    return () => window.removeEventListener('auth:logout', handleGlobalLogout);
+
+    window.addEventListener('auth:session_expired', handleSessionExpired);
+    return () => window.removeEventListener('auth:session_expired', handleSessionExpired);
   }, []);
 
   const login = async (email, password) => {
-    const response = await apiClient.post('/auth/login', { email, password });
-    const { user: userData, tokens } = response.data;
+    const response = await loginApi({ email, password });
+    const { user: userData, tokens } = response;
 
     setUser(userData);
     setAccessToken(tokens.access_token);
@@ -55,9 +70,9 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const register = async (registerData) => {
-    const response = await apiClient.post('/auth/register', registerData);
-    const { user: userData, tokens } = response.data;
+  const register = async (registrationData) => {
+    const response = await registerApi(registrationData);
+    const { user: userData, tokens } = response;
 
     setUser(userData);
     setAccessToken(tokens.access_token);
@@ -74,11 +89,12 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('kaveri_refresh_token');
     if (token) {
       try {
-        await apiClient.post('/auth/logout', { refresh_token: token });
+        await logoutApi(token);
       } catch {
-        // Silently ignore logout request failures
+        // Silently ignore logout request network failures
       }
     }
+
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
@@ -87,16 +103,28 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('kaveri_refresh_token');
   }, []);
 
+  const refreshUser = async () => {
+    try {
+      const updatedUser = await getCurrentUserApi();
+      setUser(updatedUser);
+      localStorage.setItem('kaveri_user', JSON.stringify(updatedUser));
+      return updatedUser;
+    } catch (err) {
+      throw err;
+    }
+  };
+
   const value = {
     user,
     accessToken,
     refreshToken,
-    isAuthenticated: !!user && !!accessToken,
+    isAuthenticated: Boolean(user && accessToken),
     role: user?.role,
     isLoading,
     login,
     register,
     logout,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

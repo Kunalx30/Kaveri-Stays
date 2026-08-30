@@ -2,19 +2,39 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import Home from '../pages/Home';
+import Login from '../pages/Login';
+import Register from '../pages/Register';
+import Dashboard from '../pages/Dashboard';
+import Unauthorized from '../pages/Unauthorized';
 import NotFound from '../pages/NotFound';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 /**
  * Central routing configuration for Kaveri Stays frontend.
- * Phase F1: Public Home page (/) and Fallback NotFound (*).
- * Additional routes and auth guards will be connected cleanly in Phase F2.
+ * Phase F2:
+ *   - Public: /, /login, /register, /unauthorized
+ *   - Protected: /dashboard
+ *   - Fallback: *
  */
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Main Layout containing Header & Footer */}
       <Route path="/" element={<MainLayout />}>
+        {/* Public Routes */}
         <Route index element={<Home />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route path="unauthorized" element={<Unauthorized />} />
+
+        {/* Protected Dashboard Route */}
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Wildcard 404 Route */}

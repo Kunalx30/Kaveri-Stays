@@ -1,19 +1,27 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import Loading from './Loading';
 
 /**
  * Reusable ProtectedRoute component.
- * - Redirects unauthenticated users to /login preserving target location.
- * - Enforces role-based authorization when allowedRoles is specified.
+ * - Displays loading indicator while restoring session.
+ * - Redirects unauthenticated users to /login preserving target location in state.
+ * - Enforces role-based authorization when allowedRoles is provided.
  */
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
-    return <Loading message="Authenticating session..." fullScreen />;
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <p className="text-sm font-semibold text-slate-500 animate-pulse">
+          Verifying session...
+        </p>
+      </div>
+    );
   }
 
   if (!isAuthenticated || !user) {

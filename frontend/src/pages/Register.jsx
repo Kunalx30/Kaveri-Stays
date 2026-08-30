@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Phone, MapPin, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin, UserPlus, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import ErrorMessage from '../components/ErrorMessage';
+import ErrorMessage from '../components/common/ErrorMessage';
 
 const Register = () => {
   const { register } = useAuth();
@@ -44,13 +44,13 @@ const Register = () => {
       };
 
       await register(payload);
-      navigate('/', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
         setError(detail);
       } else if (Array.isArray(detail)) {
-        setError(detail.map((d) => `${d.loc ? d.loc.join('.') + ': ' : ''}${d.msg}`).join(', '));
+        setError(detail.map((d) => `${d.loc ? d.loc.slice(1).join('.') + ': ' : ''}${d.msg}`).join(', '));
       } else {
         setError('Registration failed. Please check your information and try again.');
       }
@@ -61,10 +61,10 @@ const Register = () => {
 
   return (
     <div className="max-w-md mx-auto my-10 px-4">
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Create Guest Account</h1>
-          <p className="text-xs text-slate-500">Book luxury stays and manage your vacations seamlessly</p>
+          <p className="text-xs text-slate-500">Book luxury stays and manage your reservations</p>
         </div>
 
         <ErrorMessage message={error} onDismiss={() => setError('')} />
@@ -75,7 +75,7 @@ const Register = () => {
               Full Name *
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <User className="w-4 h-4" />
               </div>
               <input
@@ -87,7 +87,7 @@ const Register = () => {
                 value={formData.full_name}
                 onChange={handleChange}
                 placeholder="Rohit Sharma"
-                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -97,7 +97,7 @@ const Register = () => {
               Email Address *
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <Mail className="w-4 h-4" />
               </div>
               <input
@@ -107,17 +107,17 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="name@example.com"
-                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Password * (Min 6 chars)
+              Password * (Min 6 characters)
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <Lock className="w-4 h-4" />
               </div>
               <input
@@ -128,7 +128,7 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -139,7 +139,7 @@ const Register = () => {
                 Phone Number
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Phone className="w-4 h-4" />
                 </div>
                 <input
@@ -148,7 +148,7 @@ const Register = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+91 9876543210"
-                  className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                  className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                 />
               </div>
             </div>
@@ -158,7 +158,7 @@ const Register = () => {
                 City / Location
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <input
@@ -167,7 +167,7 @@ const Register = () => {
                   value={formData.city}
                   onChange={handleChange}
                   placeholder="Bangalore"
-                  className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                  className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                 />
               </div>
             </div>
@@ -176,14 +176,14 @@ const Register = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 px-4 rounded-xl text-sm font-bold text-white gradient-brand hover:opacity-95 shadow-md shadow-brand-500/20 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 mt-2"
+            className="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer"
           >
             {isSubmitting ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
                 <UserPlus className="w-4 h-4" />
-                <span>Create Account</span>
+                <span>Create Guest Account</span>
               </>
             )}
           </button>
@@ -191,7 +191,7 @@ const Register = () => {
 
         <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
           Already registered?{' '}
-          <Link to="/login" className="font-bold text-brand-600 hover:text-brand-700 hover:underline">
+          <Link to="/login" className="font-bold text-blue-600 hover:text-blue-700 hover:underline">
             Sign In
           </Link>
         </div>
