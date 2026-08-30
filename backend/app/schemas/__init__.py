@@ -29,6 +29,13 @@ from app.schemas.rate_plan import (
     RatePlanUpdate,
     RatePlanResponse
 )
+from app.schemas.booking import (
+    BookingBase,
+    BookingCreate,
+    BookingUpdate,
+    BookingStatusUpdate,
+    BookingResponse
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -51,5 +58,10 @@ __all__ = [
     "RatePlanBase",
     "RatePlanCreate",
     "RatePlanUpdate",
-    "RatePlanResponse"
+    "RatePlanResponse",
+    "BookingBase",
+    "BookingCreate",
+    "BookingUpdate",
+    "BookingStatusUpdate",
+    "BookingResponse"
 ]

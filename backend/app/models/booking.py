@@ -1,3 +1,4 @@
+import builtins
 import enum
 from sqlalchemy import (
     Column, Integer, String, SmallInteger, ForeignKey, Numeric, 
@@ -46,6 +47,32 @@ class Booking(Base):
     payments = relationship("Payment", back_populates="booking", cascade="all, delete-orphan")
     review = relationship("Review", back_populates="booking", uselist=False, cascade="all, delete-orphan")
     idempotency_records = relationship("PaymentIdempotency", back_populates="booking", cascade="all, delete-orphan")
+
+    @builtins.property
+    def check_in_date(self):
+        return self.stay.lower if self.stay else None
+
+    @builtins.property
+    def check_out_date(self):
+        return self.stay.upper if self.stay else None
+
+    @builtins.property
+    def total_nights(self):
+        if self.stay and self.stay.lower and self.stay.upper:
+            return (self.stay.upper - self.stay.lower).days
+        return None
+
+    @builtins.property
+    def total_amount(self):
+        if self.stay and self.nightly_rate is not None:
+            nights = self.total_nights
+            if nights is not None:
+                return self.nightly_rate * nights
+        return None
+
+    @builtins.property
+    def property_id(self):
+        return self.room.property_id if self.room else None
 
 
 class Payment(Base):
