@@ -23,6 +23,12 @@ from app.schemas.room import (
     RoomUpdate,
     RoomResponse
 )
+from app.schemas.rate_plan import (
+    RatePlanBase,
+    RatePlanCreate,
+    RatePlanUpdate,
+    RatePlanResponse
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -41,5 +47,9 @@ __all__ = [
     "RoomTypeResponse",
     "RoomCreate",
     "RoomUpdate",
-    "RoomResponse"
+    "RoomResponse",
+    "RatePlanBase",
+    "RatePlanCreate",
+    "RatePlanUpdate",
+    "RatePlanResponse"
 ]

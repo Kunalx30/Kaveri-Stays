@@ -1,3 +1,4 @@
+import builtins
 from sqlalchemy import Column, Integer, String, SmallInteger, ForeignKey, UniqueConstraint, Numeric
 from sqlalchemy.dialects.postgresql import DATERANGE
 from sqlalchemy.orm import relationship
@@ -61,3 +62,11 @@ class RatePlan(Base):
     # Relationships
     property = relationship("Property", back_populates="rate_plans")
     room_type = relationship("RoomType", back_populates="rate_plans")
+
+    @builtins.property
+    def valid_from(self):
+        return self.valid.lower if self.valid else None
+
+    @builtins.property
+    def valid_to(self):
+        return self.valid.upper if self.valid else None
