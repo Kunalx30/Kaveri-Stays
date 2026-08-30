@@ -124,6 +124,29 @@ async def test_rate_plans_management_suite():
         assert created_plan["valid_to"] == "2027-06-30"
         print(f"[PASSED] Test 6: Owner created rate plan ID {new_plan_id} ('Summer Special 2027').")
 
+        # ── TEST 6b: Manager creates rate plan for own property (201 Created) ───
+        mgr_plan_payload = {
+            "property_id": mgr_prop_id,
+            "room_type_id": 2,  # Deluxe room type
+            "season_name": "Manager Deluxe Promo 2027",
+            "valid_from": "2027-01-10",
+            "valid_to": "2027-02-28",
+            "nightly_rate": 5200.00
+        }
+        res_mgr_create = await client.post(f"{BASE}/rate-plans", headers=mgr_h, json=mgr_plan_payload)
+        assert res_mgr_create.status_code == 201, f"Manager create failed: {res_mgr_create.text}"
+        mgr_created_plan_id = res_mgr_create.json()["rate_plan_id"]
+        print(f"[PASSED] Test 6b: Manager successfully created rate plan ID {mgr_created_plan_id} in assigned property.")
+
+        # ── TEST 6c: Manager blocked from creating rate plan in another property (403) ───
+        res_mgr_cross_create = await client.post(
+            f"{BASE}/rate-plans",
+            headers=mgr_h,
+            json={**mgr_plan_payload, "property_id": 2}
+        )
+        assert res_mgr_cross_create.status_code == 403, f"Expected 403 for manager cross create, got {res_mgr_cross_create.status_code}"
+        print("[PASSED] Test 6c: Manager blocked (403) from creating rate plan for another property.")
+
         # ── TEST 7: Invalid property ID on create returns 404 ───────────────
         res = await client.post(
             f"{BASE}/rate-plans",
@@ -301,4 +324,9 @@ async def test_rate_plans_management_suite():
         assert res.status_code == 200
         print(f"[PASSED] Test 20c: Cleaned up adjacent rate plan ID {adj_plan_id}.")
 
-        print("\n[ALL PASSED] All 20 Rate Plans Management API tests passed!")
+        # Clean up manager created rate plan
+        res = await client.delete(f"{BASE}/rate-plans/{mgr_created_plan_id}", headers=owner_h)
+        assert res.status_code == 200
+        print(f"[PASSED] Test 20d: Cleaned up manager created rate plan ID {mgr_created_plan_id}.")
+
+        print("\n[ALL PASSED] All Rate Plans Management API tests passed!")
