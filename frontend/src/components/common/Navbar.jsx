@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Hotel, User as UserIcon, LogOut, LogIn, UserPlus, LayoutDashboard, Calendar, CalendarDays } from 'lucide-react';
+import { Hotel, User as UserIcon, LogOut, LogIn, UserPlus, LayoutDashboard, Calendar, CalendarDays, CreditCard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
@@ -81,11 +81,23 @@ const Navbar = () => {
               <Link
                 to="/my-bookings"
                 className={`hidden sm:flex items-center space-x-1 ${navLinkClass(
-                  isStartsWith('/my-bookings') || isStartsWith('/bookings')
+                  isStartsWith('/my-bookings') || (isStartsWith('/bookings') && !isStartsWith('/bookings/create') && !location.pathname.includes('/payment'))
                 )}`}
               >
                 <CalendarDays className="w-4 h-4 text-blue-500" />
                 <span>My Bookings</span>
+              </Link>
+            )}
+
+            {isAuthenticated && (
+              <Link
+                to="/my-payments"
+                className={`hidden md:flex items-center space-x-1 ${navLinkClass(
+                  isStartsWith('/my-payments') || isStartsWith('/payments')
+                )}`}
+              >
+                <CreditCard className="w-4 h-4 text-blue-500" />
+                <span>My Payments</span>
               </Link>
             )}
 

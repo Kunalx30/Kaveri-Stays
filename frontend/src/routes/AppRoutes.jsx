@@ -11,6 +11,9 @@ import Dashboard from '../pages/Dashboard';
 import CreateBooking from '../pages/CreateBooking';
 import BookingDetails from '../pages/BookingDetails';
 import MyBookings from '../pages/MyBookings';
+import CreatePayment from '../pages/CreatePayment';
+import PaymentDetails from '../pages/PaymentDetails';
+import MyPayments from '../pages/MyPayments';
 import Unauthorized from '../pages/Unauthorized';
 import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -20,26 +23,13 @@ import ProtectedRoute from '../components/ProtectedRoute';
  *
  * Phase F3: Public discovery routes
  * Phase F4: Booking creation, details, and my-bookings routes
- *
- * /                             → Home
- * /properties                  → Properties catalog (public)
- * /properties/:propertyId      → Property details (public)
- * /properties/:propertyId/availability → Availability search for property (public)
- * /availability                → Global availability search (public)
- * /login                       → Login (public)
- * /register                    → Register (public)
- * /bookings/create             → Create booking (protected)
- * /bookings/:bookingId         → Booking details (protected)
- * /my-bookings                 → My bookings list (protected)
- * /dashboard                   → Dashboard (protected)
- * /unauthorized                → Unauthorized page
- * *                            → 404 Not Found
+ * Phase F5: Payments, payment details, and payment history routes
  */
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<MainLayout />}>
-        {/* Public Routes */}
+        {/* Public Discovery Routes */}
         <Route index element={<Home />} />
         <Route path="properties" element={<Properties />} />
         <Route path="properties/:propertyId" element={<PropertyDetails />} />
@@ -73,6 +63,32 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <MyBookings />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Payment Routes */}
+        <Route
+          path="bookings/:bookingId/payment"
+          element={
+            <ProtectedRoute>
+              <CreatePayment />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="payments/:paymentId"
+          element={
+            <ProtectedRoute>
+              <PaymentDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="my-payments"
+          element={
+            <ProtectedRoute>
+              <MyPayments />
             </ProtectedRoute>
           }
         />

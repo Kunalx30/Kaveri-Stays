@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import {
-  CheckCircle2, Hash, Hotel, Bed, Users, CalendarCheck, CalendarX,
+  CheckCircle2, Hash, Hotel, Users, CalendarCheck, CalendarX,
   FileText, Clock, ArrowLeft, Loader2, AlertCircle, XCircle,
+  CreditCard, ChevronRight, ShieldCheck,
 } from 'lucide-react';
 import { getBookingByIdApi, cancelBookingApi } from '../api/bookings';
+import { getBookingPaymentSummaryApi } from '../api/payments';
 import { useAuth } from '../context/AuthContext';
 import BookingStatus, { canGuestCancel } from '../components/booking/BookingStatus';
 import CancelBookingDialog from '../components/booking/CancelBookingDialog';
+import { PaymentSettlementBadge, PaymentMethodBadge } from '../components/payment/PaymentStatus';
 import ErrorMessage from '../components/common/ErrorMessage';
 
 const formatINR = (val) => {
@@ -31,27 +34,24 @@ const formatDatetime = (dtStr) => {
 };
 
 /**
- * BookingDetails Page
+ * BookingDetails Page (with Phase F5 Payment Integration)
  *
  * Route: /bookings/:bookingId
  *
- * Fetches booking from the actual backend GET /bookings/:id.
- * Does NOT rely only on navigation state (supports browser refresh).
- * Shows success message if navigated here after booking creation.
- * Shows cancellation dialog with confirmation before calling backend.
- *
- * Authorization (enforced by backend):
- *   - Guest: can only view their own booking (403 otherwise)
- *   - Manager/Staff: only within their assigned property
- *   - Owner: any booking
+ * Displays:
+ *   - Booking metadata and room info
+ *   - Financial balance & settlement status from GET /api/v1/payments/booking/:id/summary
+ *   - "Pay Now" action button when remaining balance > 0 and status is payable
+ *   - List of previous payment transactions with links to receipts
+ *   - Cancel Booking button (for confirmed status)
  */
 const BookingDetails = () => {
   const { bookingId } = useParams();
   const location = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [booking, setBooking] = useState(location.state?.booking || null);
+  const [paymentSummary, setPaymentSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(!location.state?.booking);
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -60,30 +60,33 @@ const BookingDetails = () => {
 
   const justCreated = location.state?.bookingCreated === true;
 
-  // Always fetch from backend to support refresh (do not rely solely on state)
-  useEffect(() => {
-    const fetchBooking = async () => {
-      setIsLoading(true);
-      setLoadError('');
-      try {
-        const data = await getBookingByIdApi(Number(bookingId));
-        setBooking(data);
-      } catch (err) {
-        if (err.response?.status === 404) {
-          setLoadError('Booking not found. It may have been deleted.');
-        } else if (err.response?.status === 403) {
-          setLoadError('Access denied. You do not have permission to view this booking.');
-        } else if (err.response?.status === 401) {
-          setLoadError('Please sign in to view booking details.');
-        } else {
-          setLoadError('Failed to load booking. Please try again.');
-        }
-      } finally {
-        setIsLoading(false);
+  const loadBookingAndPayments = async () => {
+    setIsLoading(true);
+    setLoadError('');
+    try {
+      const [bookingData, summaryData] = await Promise.all([
+        getBookingByIdApi(Number(bookingId)),
+        getBookingPaymentSummaryApi(Number(bookingId)).catch(() => null),
+      ]);
+      setBooking(bookingData);
+      setPaymentSummary(summaryData);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setLoadError('Booking not found. It may have been deleted.');
+      } else if (err.response?.status === 403) {
+        setLoadError('Access denied: You do not have permission to view this booking.');
+      } else if (err.response?.status === 401) {
+        setLoadError('Please sign in to view booking details.');
+      } else {
+        setLoadError('Failed to load booking. Please try again.');
       }
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchBooking();
+  useEffect(() => {
+    loadBookingAndPayments();
   }, [bookingId]);
 
   const handleCancelConfirm = async () => {
@@ -93,6 +96,8 @@ const BookingDetails = () => {
       const updated = await cancelBookingApi(Number(bookingId));
       setBooking(updated);
       setShowCancelDialog(false);
+      // Reload payment summary after status change
+      getBookingPaymentSummaryApi(Number(bookingId)).then(setPaymentSummary).catch(() => {});
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
@@ -114,7 +119,7 @@ const BookingDetails = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-3">
         <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
-        <p className="text-sm text-slate-500 animate-pulse">Loading booking details...</p>
+        <p className="text-sm text-slate-500 animate-pulse">Loading booking and payment details...</p>
       </div>
     );
   }
@@ -125,8 +130,11 @@ const BookingDetails = () => {
         <AlertCircle className="w-10 h-10 text-red-400 mx-auto" />
         <h2 className="text-lg font-bold text-slate-800">Booking Not Available</h2>
         <p className="text-sm text-slate-500">{loadError}</p>
-        <Link to="/my-bookings" className="inline-block mt-2 px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm">
-          My Bookings
+        <Link
+          to="/my-bookings"
+          className="inline-block mt-2 px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm"
+        >
+          Back to My Bookings
         </Link>
       </div>
     );
@@ -141,12 +149,13 @@ const BookingDetails = () => {
   } = booking;
 
   const isGuest = user?.role === 'guest';
-  const guestCanCancel = isGuest && canGuestCancel(status);
-  const nonGuestCanCancel = !isGuest && canGuestCancel(status);
-  const showCancelButton = guestCanCancel || nonGuestCanCancel;
+  const showCancelButton = canGuestCancel(status);
+
+  // Payment is allowed if booking is active (confirmed or checked_in) and not fully paid
+  const isPayable = (status === 'confirmed' || status === 'checked_in') && (!paymentSummary || !paymentSummary.is_fully_paid);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
       {showCancelDialog && (
         <CancelBookingDialog
           bookingId={booking_id}
@@ -157,33 +166,44 @@ const BookingDetails = () => {
       )}
 
       {/* Back Navigation */}
-      <Link
-        to="/my-bookings"
-        className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>My Bookings</span>
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          to="/my-bookings"
+          className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>My Bookings</span>
+        </Link>
 
-      {/* Success Banner (shown after just creating a booking) */}
+        {paymentSummary && (
+          <Link
+            to="/my-payments"
+            className="text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors"
+          >
+            Payment History →
+          </Link>
+        )}
+      </div>
+
+      {/* Success Banner (shown after creating a booking) */}
       {justCreated && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start space-x-3">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-emerald-800">Your booking has been created successfully!</p>
+            <p className="text-sm font-bold text-emerald-800">Your reservation has been created!</p>
             <p className="text-xs text-emerald-600 mt-0.5">
-              Your reservation is confirmed. Payment is handled separately.
+              Your room is reserved. You can complete the payment below now or at check-in.
             </p>
           </div>
         </div>
       )}
 
       {/* Page Header */}
-      <div className="flex items-start justify-between pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
           <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">
             <Hash className="w-3.5 h-3.5" />
-            <span>Booking #{booking_id}</span>
+            <span>Reservation #{booking_id}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
             Booking Details
@@ -191,39 +211,96 @@ const BookingDetails = () => {
           {created_at && (
             <p className="text-xs text-slate-400 mt-1 flex items-center space-x-1">
               <Clock className="w-3 h-3" />
-              <span>Created {formatDatetime(created_at)}</span>
+              <span>Booked on {formatDatetime(created_at)}</span>
             </p>
           )}
         </div>
-        <BookingStatus status={status} size="md" />
+
+        <div className="flex items-center space-x-2">
+          <BookingStatus status={status} size="md" />
+          {paymentSummary && (
+            <PaymentSettlementBadge
+              isFullyPaid={paymentSummary.is_fully_paid}
+              totalPaid={paymentSummary.total_paid}
+              size="md"
+            />
+          )}
+        </div>
       </div>
 
       <ErrorMessage message={actionError} onDismiss={() => setActionError('')} />
 
-      {/* Main Details Card */}
+      {/* Financial & Payment Summary Card */}
+      <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white rounded-3xl p-6 sm:p-7 shadow-md space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+          <div className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-widest text-blue-300">
+              Payment & Settlement Status
+            </span>
+            <div className="text-2xl sm:text-3xl font-black text-white">
+              {paymentSummary ? formatINR(paymentSummary.total_booking_amount) : formatINR(total_amount)}
+              <span className="text-xs font-normal text-blue-200 ml-2">Total Stay Due</span>
+            </div>
+          </div>
+
+          {/* Pay Button if balance remains */}
+          {isPayable && paymentSummary && Number(paymentSummary.remaining_balance) > 0 && (
+            <Link
+              to={`/bookings/${booking_id}/payment`}
+              id="pay-now-btn"
+              className="px-5 py-3 rounded-xl font-black text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center space-x-2 self-start sm:self-auto shrink-0"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>Pay Remaining {formatINR(paymentSummary.remaining_balance)}</span>
+            </Link>
+          )}
+        </div>
+
+        {/* Balance Stats Row */}
+        {paymentSummary && (
+          <div className="grid grid-cols-3 gap-4 text-xs pt-1">
+            <div className="space-y-1">
+              <span className="text-slate-400 uppercase tracking-wider font-semibold text-[10px]">Total Due</span>
+              <p className="font-extrabold text-white text-sm">{formatINR(paymentSummary.total_booking_amount)}</p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-emerald-400 uppercase tracking-wider font-semibold text-[10px]">Paid to Date</span>
+              <p className="font-extrabold text-emerald-300 text-sm">{formatINR(paymentSummary.total_paid)}</p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-amber-400 uppercase tracking-wider font-semibold text-[10px]">Outstanding</span>
+              <p className="font-extrabold text-amber-300 text-sm">{formatINR(paymentSummary.remaining_balance)}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Reservation Info Card */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 space-y-6">
-        {/* Property & Room */}
+        {/* Property & Room Section */}
         <div className="space-y-3">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1.5">
-            <Hotel className="w-3.5 h-3.5" />
-            <span>Property & Room</span>
+            <Hotel className="w-3.5 h-3.5 text-slate-400" />
+            <span>Property & Accommodation</span>
           </h2>
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Property ID</p>
-              <p className="font-bold text-slate-800">{property_id ?? '—'}</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Property</p>
+              <p className="font-bold text-slate-800">#{property_id ?? '1'}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Room ID</p>
-              <p className="font-bold text-slate-800">#{room_id}</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Assigned Room</p>
+              <p className="font-bold text-slate-800">Room #{room_id}</p>
             </div>
             <div>
               <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Guest ID</p>
-              <p className="font-bold text-slate-800">{guest_id}</p>
+              <p className="font-bold text-slate-800">#{guest_id}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Guests Staying</p>
-              <p className="font-bold text-slate-800 flex items-center space-x-1.5">
+              <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Guests Count</p>
+              <p className="font-bold text-slate-800 flex items-center space-x-1">
                 <Users className="w-3.5 h-3.5 text-slate-400" />
                 <span>{guests_count}</span>
               </p>
@@ -236,8 +313,8 @@ const BookingDetails = () => {
         {/* Stay Dates */}
         <div className="space-y-3">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1.5">
-            <CalendarCheck className="w-3.5 h-3.5" />
-            <span>Stay Dates</span>
+            <CalendarCheck className="w-3.5 h-3.5 text-slate-400" />
+            <span>Stay Itinerary</span>
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-slate-50 rounded-xl p-3 space-y-0.5">
@@ -251,34 +328,9 @@ const BookingDetails = () => {
           </div>
           {total_nights != null && (
             <p className="text-xs text-slate-500 font-semibold">
-              Duration: {total_nights} night{total_nights !== 1 ? 's' : ''}
+              Length of stay: {total_nights} night{total_nights !== 1 ? 's' : ''} • Rate snapshot: {formatINR(nightly_rate)}/night
             </p>
           )}
-        </div>
-
-        <div className="border-t border-slate-100" />
-
-        {/* Pricing */}
-        <div className="space-y-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pricing</h2>
-          <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between text-slate-600">
-              <span>Nightly Rate</span>
-              <span className="font-semibold">{formatINR(nightly_rate)}</span>
-            </div>
-            {total_nights != null && (
-              <div className="flex justify-between text-slate-600">
-                <span>Duration</span>
-                <span className="font-semibold">{total_nights} night{total_nights !== 1 ? 's' : ''}</span>
-              </div>
-            )}
-            {total_amount != null && (
-              <div className="flex justify-between font-black text-slate-900 pt-2 border-t border-slate-100 text-base">
-                <span>Total Amount</span>
-                <span>{formatINR(total_amount)}</span>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Notes */}
@@ -287,7 +339,7 @@ const BookingDetails = () => {
             <div className="border-t border-slate-100" />
             <div className="space-y-2">
               <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1.5">
-                <FileText className="w-3.5 h-3.5" />
+                <FileText className="w-3.5 h-3.5 text-slate-400" />
                 <span>Special Requests</span>
               </h2>
               <p className="text-sm text-slate-700 italic bg-slate-50 rounded-xl p-3">"{notes}"</p>
@@ -296,9 +348,52 @@ const BookingDetails = () => {
         )}
       </div>
 
-      {/* Cancel Button (only for confirmed bookings) */}
+      {/* Transaction History Section */}
+      {paymentSummary && paymentSummary.payments.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-extrabold text-slate-900 flex items-center space-x-2">
+              <CreditCard className="w-4 h-4 text-blue-600" />
+              <span>Payments Recorded ({paymentSummary.payments.length})</span>
+            </h2>
+            <Link
+              to="/my-payments"
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
+            >
+              View Full History →
+            </Link>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {paymentSummary.payments.map((p) => (
+              <div key={p.payment_id} className="py-3 flex items-center justify-between text-xs">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-slate-800">Txn #{p.payment_id}</span>
+                    <PaymentMethodBadge method={p.method} size="sm" />
+                  </div>
+                  <p className="text-[11px] text-slate-400">{formatDatetime(p.paid_at)}</p>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <span className="font-black text-slate-900 text-sm">{formatINR(p.amount)}</span>
+                  <Link
+                    to={`/payments/${p.payment_id}`}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-50 transition-colors"
+                    title="View Receipt"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Reservation Action */}
       {showCancelButton && (
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-2">
           <button
             type="button"
             id="cancel-booking-btn"
@@ -306,15 +401,10 @@ const BookingDetails = () => {
             className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 transition-colors cursor-pointer"
           >
             <XCircle className="w-4 h-4" />
-            <span>Cancel Booking</span>
+            <span>Cancel Reservation</span>
           </button>
         </div>
       )}
-
-      {/* Payment Note */}
-      <div className="text-center text-[11px] text-slate-400 pb-2">
-        Payment processing is handled separately. Contact the hotel or use the payment portal.
-      </div>
     </div>
   );
 };
