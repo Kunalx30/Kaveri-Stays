@@ -14,6 +14,9 @@ import MyBookings from '../pages/MyBookings';
 import CreatePayment from '../pages/CreatePayment';
 import PaymentDetails from '../pages/PaymentDetails';
 import MyPayments from '../pages/MyPayments';
+import CreateReview from '../pages/CreateReview';
+import EditReview from '../pages/EditReview';
+import MyReviews from '../pages/MyReviews';
 import Unauthorized from '../pages/Unauthorized';
 import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -24,6 +27,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
  * Phase F3: Public discovery routes
  * Phase F4: Booking creation, details, and my-bookings routes
  * Phase F5: Payments, payment details, and payment history routes
+ * Phase F6: Reviews, ratings, review submission, edit, and my-reviews routes
  */
 const AppRoutes = () => {
   return (
@@ -89,6 +93,32 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <MyPayments />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Review Routes */}
+        <Route
+          path="bookings/:bookingId/review"
+          element={
+            <ProtectedRoute>
+              <CreateReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="reviews/:reviewId/edit"
+          element={
+            <ProtectedRoute>
+              <EditReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="my-reviews"
+          element={
+            <ProtectedRoute>
+              <MyReviews />
             </ProtectedRoute>
           }
         />

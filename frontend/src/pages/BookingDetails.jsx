@@ -3,14 +3,16 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import {
   CheckCircle2, Hash, Hotel, Users, CalendarCheck, CalendarX,
   FileText, Clock, ArrowLeft, Loader2, AlertCircle, XCircle,
-  CreditCard, ChevronRight, ShieldCheck,
+  CreditCard, ChevronRight, ShieldCheck, Star, MessageSquare, Edit3,
 } from 'lucide-react';
 import { getBookingByIdApi, cancelBookingApi } from '../api/bookings';
 import { getBookingPaymentSummaryApi } from '../api/payments';
+import { listReviewsApi } from '../api/reviews';
 import { useAuth } from '../context/AuthContext';
 import BookingStatus, { canGuestCancel } from '../components/booking/BookingStatus';
 import CancelBookingDialog from '../components/booking/CancelBookingDialog';
 import { PaymentSettlementBadge, PaymentMethodBadge } from '../components/payment/PaymentStatus';
+import StarRating from '../components/review/ReviewRating';
 import ErrorMessage from '../components/common/ErrorMessage';
 
 const formatINR = (val) => {
@@ -34,16 +36,9 @@ const formatDatetime = (dtStr) => {
 };
 
 /**
- * BookingDetails Page (with Phase F5 Payment Integration)
+ * BookingDetails Page (with Phase F5 Payments & Phase F6 Reviews Integration)
  *
  * Route: /bookings/:bookingId
- *
- * Displays:
- *   - Booking metadata and room info
- *   - Financial balance & settlement status from GET /api/v1/payments/booking/:id/summary
- *   - "Pay Now" action button when remaining balance > 0 and status is payable
- *   - List of previous payment transactions with links to receipts
- *   - Cancel Booking button (for confirmed status)
  */
 const BookingDetails = () => {
   const { bookingId } = useParams();
@@ -52,6 +47,7 @@ const BookingDetails = () => {
 
   const [booking, setBooking] = useState(location.state?.booking || null);
   const [paymentSummary, setPaymentSummary] = useState(null);
+  const [bookingReview, setBookingReview] = useState(null);
   const [isLoading, setIsLoading] = useState(!location.state?.booking);
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -60,16 +56,22 @@ const BookingDetails = () => {
 
   const justCreated = location.state?.bookingCreated === true;
 
-  const loadBookingAndPayments = async () => {
+  const loadBookingAndData = async () => {
     setIsLoading(true);
     setLoadError('');
     try {
-      const [bookingData, summaryData] = await Promise.all([
+      const [bookingData, summaryData, reviewsData] = await Promise.all([
         getBookingByIdApi(Number(bookingId)),
         getBookingPaymentSummaryApi(Number(bookingId)).catch(() => null),
+        listReviewsApi({ booking_id: Number(bookingId) }).catch(() => []),
       ]);
       setBooking(bookingData);
       setPaymentSummary(summaryData);
+      if (reviewsData.length > 0) {
+        setBookingReview(reviewsData[0]);
+      } else {
+        setBookingReview(null);
+      }
     } catch (err) {
       if (err.response?.status === 404) {
         setLoadError('Booking not found. It may have been deleted.');
@@ -86,7 +88,7 @@ const BookingDetails = () => {
   };
 
   useEffect(() => {
-    loadBookingAndPayments();
+    loadBookingAndData();
   }, [bookingId]);
 
   const handleCancelConfirm = async () => {
@@ -119,7 +121,7 @@ const BookingDetails = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-3">
         <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
-        <p className="text-sm text-slate-500 animate-pulse">Loading booking and payment details...</p>
+        <p className="text-sm text-slate-500 animate-pulse">Loading reservation details...</p>
       </div>
     );
   }
@@ -148,7 +150,6 @@ const BookingDetails = () => {
     nightly_rate, total_amount, status, notes, created_at,
   } = booking;
 
-  const isGuest = user?.role === 'guest';
   const showCancelButton = canGuestCancel(status);
 
   // Payment is allowed if booking is active (confirmed or checked_in) and not fully paid
@@ -347,6 +348,60 @@ const BookingDetails = () => {
           </>
         )}
       </div>
+
+      {/* Completed Stay: Review Integration Section */}
+      {status === 'checked_out' && (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-extrabold text-slate-900 flex items-center space-x-2">
+              <MessageSquare className="w-4 h-4 text-amber-500" />
+              <span>Guest Review & Experience</span>
+            </h2>
+            {bookingReview && (
+              <Link
+                to={`/reviews/${bookingReview.review_id}/edit`}
+                className="inline-flex items-center space-x-1 text-xs font-bold text-blue-600 hover:text-blue-700"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Edit Review</span>
+              </Link>
+            )}
+          </div>
+
+          {bookingReview ? (
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-200/60">
+              <div className="flex items-center justify-between">
+                <StarRating rating={bookingReview.rating} size="sm" showNumeric />
+                <span className="text-[11px] text-slate-400">
+                  Reviewed on {new Date(bookingReview.reviewed_at).toLocaleDateString('en-IN')}
+                </span>
+              </div>
+              {bookingReview.comments ? (
+                <p className="text-xs text-slate-700 italic">"{bookingReview.comments}"</p>
+              ) : (
+                <p className="text-xs text-slate-400 italic">No comments provided with rating.</p>
+              )}
+            </div>
+          ) : (
+            <div className="bg-amber-50/60 border border-amber-200/70 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-amber-950">How was your stay?</p>
+                <p className="text-[11px] text-amber-800">
+                  Your stay is complete! Share your feedback to help fellow travelers.
+                </p>
+              </div>
+
+              <Link
+                to={`/bookings/${booking_id}/review`}
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-xs transition-colors self-start sm:self-auto shrink-0"
+              >
+                <Star className="w-3.5 h-3.5" />
+                <span>Write a Review</span>
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Transaction History Section */}
       {paymentSummary && paymentSummary.payments.length > 0 && (

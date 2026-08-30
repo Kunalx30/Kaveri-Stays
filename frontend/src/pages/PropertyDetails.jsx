@@ -1,16 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Hotel, MapPin, Star, Calendar, ArrowLeft, Users, ShieldCheck, Waves, Coffee, Wifi, Sparkles, Loader2 } from 'lucide-react';
+import {
+  Hotel, MapPin, Star, Calendar, ArrowLeft, Users, ShieldCheck,
+  Waves, Coffee, Wifi, Sparkles, Loader2, MessageSquare, SlidersHorizontal,
+} from 'lucide-react';
 import { getPropertyByIdApi, getRoomTypesApi } from '../api/properties';
+import { listReviewsApi, deleteReviewApi } from '../api/reviews';
+import StarRating from '../components/review/ReviewRating';
+import ReviewCard from '../components/review/ReviewCard';
+import DeleteReviewDialog from '../components/review/DeleteReviewDialog';
 import ErrorMessage from '../components/common/ErrorMessage';
 import EmptyState from '../components/common/EmptyState';
+
+const RATING_FILTERS = [
+  { label: 'All Reviews', value: '' },
+  { label: '5 ★', value: 5 },
+  { label: '4 ★', value: 4 },
+  { label: '3 ★', value: 3 },
+  { label: '2 ★', value: 2 },
+  { label: '1 ★', value: 1 },
+];
 
 const PropertyDetails = () => {
   const { propertyId } = useParams();
   const [property, setProperty] = useState(null);
   const [roomTypes, setRoomTypes] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [ratingFilter, setRatingFilter] = useState('');
+
+  // Delete Review State
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -36,8 +59,57 @@ const PropertyDetails = () => {
     }
   }, [propertyId]);
 
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const params = { property_id: Number(propertyId) };
+      if (ratingFilter) params.rating = ratingFilter;
+      const data = await listReviewsApi(params);
+      setReviews(data);
+    } catch {
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (propertyId) {
+      fetchReviews();
+    }
+  }, [propertyId, ratingFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDeleteReview = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
+    try {
+      await deleteReviewApi(deleteTargetId);
+      setReviews((prev) => prev.filter((r) => r.review_id !== deleteTargetId));
+      setDeleteTargetId(null);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to delete review.');
+      setDeleteTargetId(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Calculate display-only review average if reviews exist
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      {deleteTargetId && (
+        <DeleteReviewDialog
+          reviewId={deleteTargetId}
+          onConfirm={handleDeleteReview}
+          onDismiss={() => setDeleteTargetId(null)}
+          isDeleting={isDeleting}
+        />
+      )}
+
       {/* Back Button */}
       <div>
         <Link
@@ -68,7 +140,7 @@ const PropertyDetails = () => {
       )}
 
       {!loading && property && (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {/* Main Hero Header Card */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -175,6 +247,82 @@ const PropertyDetails = () => {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Guest Reviews & Ratings Section */}
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-200">
+              <div>
+                <div className="flex items-center space-x-1.5 text-blue-600 text-xs font-bold uppercase tracking-wider mb-1">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Verified Guest Feedback</span>
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Guest Reviews & Ratings
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  Real experiences shared by guests who completed their stay at {property.name}.
+                </p>
+              </div>
+
+              {/* Star Rating Filters */}
+              <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-1" />
+                {RATING_FILTERS.map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setRatingFilter(f.value)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                      ratingFilter === f.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {reviewsLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-2">
+                <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                <p className="text-xs text-slate-400">Loading guest reviews...</p>
+              </div>
+            ) : reviews.length === 0 ? (
+              <EmptyState
+                title={ratingFilter ? `No ${ratingFilter}-Star Reviews` : 'No Reviews Yet'}
+                message={
+                  ratingFilter
+                    ? 'No reviews match this specific star rating filter.'
+                    : `Be the first guest to share your experience after completing your stay at ${property.name}!`
+                }
+              />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs text-slate-500 font-semibold px-1">
+                  <span>Showing {reviews.length} review{reviews.length !== 1 ? 's' : ''}</span>
+                  {avgRating && (
+                    <div className="flex items-center space-x-1.5">
+                      <span>Average Score:</span>
+                      <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-black text-[11px]">
+                        ★ {avgRating} / 5.0
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {reviews.map((rev) => (
+                    <ReviewCard
+                      key={rev.review_id}
+                      review={rev}
+                      onDelete={(id) => setDeleteTargetId(id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

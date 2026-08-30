@@ -1,6 +1,9 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Hotel, User as UserIcon, LogOut, LogIn, UserPlus, LayoutDashboard, Calendar, CalendarDays, CreditCard } from 'lucide-react';
+import {
+  Hotel, User as UserIcon, LogOut, LogIn, UserPlus,
+  LayoutDashboard, Calendar, CalendarDays, CreditCard, MessageSquare,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
@@ -26,7 +29,7 @@ const Navbar = () => {
   const isStartsWith = (prefix) => location.pathname.startsWith(prefix);
 
   const navLinkClass = (active) =>
-    `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+    `px-2.5 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
       active
         ? 'text-blue-600 bg-blue-50 font-semibold'
         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -37,22 +40,22 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Brand */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-900 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              <Hotel className="w-6 h-6 text-white" />
+          <Link to="/" className="flex items-center space-x-2.5 group">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-900 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
+              <Hotel className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <span className="text-xl font-black tracking-tight text-slate-900">
+              <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900">
                 Kaveri<span className="text-blue-600">Stays</span>
               </span>
-              <span className="block text-[10px] font-semibold text-slate-400 -mt-1 tracking-widest uppercase">
+              <span className="block text-[9px] sm:text-[10px] font-semibold text-slate-400 -mt-1 tracking-widest uppercase">
                 Hotel Booking & Discovery
               </span>
             </div>
           </Link>
 
           {/* Navigation Links */}
-          <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-1.5">
             <Link to="/" className={navLinkClass(isActive('/'))}>
               Home
             </Link>
@@ -73,7 +76,7 @@ const Navbar = () => {
                 location.pathname.includes('/availability')
               )}`}
             >
-              <Calendar className="w-4 h-4 text-blue-500" />
+              <Calendar className="w-3.5 h-3.5 text-blue-500" />
               <span>Availability</span>
             </Link>
 
@@ -81,11 +84,11 @@ const Navbar = () => {
               <Link
                 to="/my-bookings"
                 className={`hidden sm:flex items-center space-x-1 ${navLinkClass(
-                  isStartsWith('/my-bookings') || (isStartsWith('/bookings') && !isStartsWith('/bookings/create') && !location.pathname.includes('/payment'))
+                  isStartsWith('/my-bookings') || (isStartsWith('/bookings') && !isStartsWith('/bookings/create') && !location.pathname.includes('/payment') && !location.pathname.includes('/review'))
                 )}`}
               >
-                <CalendarDays className="w-4 h-4 text-blue-500" />
-                <span>My Bookings</span>
+                <CalendarDays className="w-3.5 h-3.5 text-blue-500" />
+                <span>Bookings</span>
               </Link>
             )}
 
@@ -96,17 +99,29 @@ const Navbar = () => {
                   isStartsWith('/my-payments') || isStartsWith('/payments')
                 )}`}
               >
-                <CreditCard className="w-4 h-4 text-blue-500" />
-                <span>My Payments</span>
+                <CreditCard className="w-3.5 h-3.5 text-blue-500" />
+                <span>Payments</span>
+              </Link>
+            )}
+
+            {isAuthenticated && (
+              <Link
+                to="/my-reviews"
+                className={`hidden lg:flex items-center space-x-1 ${navLinkClass(
+                  isStartsWith('/my-reviews') || isStartsWith('/reviews')
+                )}`}
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                <span>Reviews</span>
               </Link>
             )}
 
             {isAuthenticated && (
               <Link
                 to="/dashboard"
-                className={`hidden lg:flex items-center space-x-1.5 ${navLinkClass(isActive('/dashboard'))}`}
+                className={`hidden xl:flex items-center space-x-1.5 ${navLinkClass(isActive('/dashboard'))}`}
               >
-                <LayoutDashboard className="w-4 h-4" />
+                <LayoutDashboard className="w-3.5 h-3.5" />
                 <span>Dashboard</span>
               </Link>
             )}
@@ -119,7 +134,9 @@ const Navbar = () => {
                     {user?.full_name?.charAt(0) || <UserIcon className="w-4 h-4" />}
                   </div>
                   <div className="text-left">
-                    <p className="text-xs font-bold text-slate-800 leading-tight">{user?.full_name}</p>
+                    <p className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[100px]">
+                      {user?.full_name}
+                    </p>
                     <span className={`inline-block px-1.5 text-[9px] font-extrabold uppercase rounded border ${getRoleBadgeStyle(user?.role)}`}>
                       {user?.role}
                     </span>
@@ -139,14 +156,14 @@ const Navbar = () => {
               <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
                 <Link
                   to="/login"
-                  className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  className="flex items-center space-x-1 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                 >
                   <LogIn className="w-4 h-4" />
                   <span>Sign In</span>
                 </Link>
                 <Link
                   to="/register"
-                  className="flex items-center space-x-1 px-3.5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/20 transition-all"
+                  className="flex items-center space-x-1 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/20 transition-all"
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>Register</span>
