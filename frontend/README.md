@@ -1,16 +1,64 @@
-# React + Vite
+# Kaveri Stays — Frontend (Phase F1 Foundation)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React frontend for the Kaveri Stays Hotel Booking and Property Management System, built with **React**, **Vite**, **React Router DOM**, **Axios**, and **Tailwind CSS**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Project Structure
 
-## React Compiler
+```
+frontend/
+├── src/
+│   ├── api/
+│   │   └── client.js        # Centralized Axios client (baseURL from VITE_API_BASE_URL)
+│   ├── components/
+│   │   └── common/
+│   │       ├── Navbar.jsx   # Top navigation header
+│   │       └── Footer.jsx   # Application footer
+│   ├── layouts/
+│   │   └── MainLayout.jsx   # Shared layout wrapper
+│   ├── pages/
+│   │   ├── Home.jsx         # Landing page with live backend health verification
+│   │   └── NotFound.jsx     # 404 Fallback page
+│   ├── routes/
+│   │   └── AppRoutes.jsx    # React Router route definitions
+│   ├── hooks/               # Custom React hooks
+│   ├── context/             # React Context providers
+│   ├── utils/               # Formatting and utility helpers
+│   ├── App.jsx              # Application root component
+│   ├── index.css            # Tailwind directives and custom styles
+│   └── main.jsx             # React DOM entrypoint
+├── .env.example             # Environment variable template
+├── .env                     # Local environment settings
+├── package.json
+└── vite.config.js
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### 1. Install Dependencies
+```bash
+cd frontend
+npm install
+```
+
+### 2. Configure Environment
+Create `.env` based on `.env.example`:
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### 3. Run Development Server
+```bash
+npm run dev
+```
+
+The frontend will run at `http://localhost:5173`.
+
+### 4. Build for Production
+```bash
+npm run build
+```
+The compiled output is located in `dist/`.
