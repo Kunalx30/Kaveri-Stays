@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased font-sans min-h-screen selection:bg-brand-500 selection:text-white;
+  }
+}
+
+/* Custom UI utilities for cards and glassmorphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.gradient-brand {
+  background: linear-gradient(135deg, #0c3d6e 0%, #0c87eb 100%);
+}
+
+.gradient-hero {
+  background: linear-gradient(135deg, #082749 0%, #0355a3 50%, #0c87eb 100%);
+}
