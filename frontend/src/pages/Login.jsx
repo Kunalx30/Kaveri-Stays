@@ -8,7 +8,14 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/dashboard';
+
+  // Location state may contain:
+  //   from: previous page path (string from ProtectedRoute)
+  //   bookingIntent: room+dates data passed from AvailabilityResults when unauthenticated
+  //   message: optional contextual message to display
+  const fromPath = location.state?.from || '/dashboard';
+  const bookingIntent = location.state?.bookingIntent || null;
+  const contextMessage = location.state?.message || '';
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -26,7 +33,12 @@ const Login = () => {
 
     try {
       await login(formData.email.trim(), formData.password);
-      navigate(from, { replace: true });
+      if (bookingIntent) {
+        // Redirect to booking creation with the preserved intent
+        navigate('/bookings/create', { state: { bookingIntent }, replace: true });
+      } else {
+        navigate(fromPath, { replace: true });
+      }
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
@@ -53,6 +65,13 @@ const Login = () => {
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Sign In</h1>
           <p className="text-xs text-slate-500">Access your Kaveri Stays portal and reservations</p>
         </div>
+
+        {/* Contextual message from booking redirect */}
+        {contextMessage && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs text-blue-700 font-medium">
+            {contextMessage}
+          </div>
+        )}
 
         <ErrorMessage message={error} onDismiss={() => setError('')} />
 

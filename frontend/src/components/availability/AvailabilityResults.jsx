@@ -1,15 +1,29 @@
-import React, { useState } from 'react';
-import { Bed, Users, Hotel, CheckCircle, Info, Star, CalendarCheck } from 'lucide-react';
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Bed, Users, Hotel, CheckCircle, Star, CalendarCheck, LogIn } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import EmptyState from '../common/EmptyState';
 
+/**
+ * AvailabilityResults
+ *
+ * Renders the list of rooms returned by the backend availability API.
+ * On "Select Room":
+ *   - If NOT authenticated → redirect to /login, preserving booking intent in state.
+ *   - If authenticated → navigate to /bookings/create with room + search data.
+ *
+ * Does NOT calculate final prices. Shows backend-provided nightly_rate for display only.
+ * The backend resolves the authoritative nightly_rate on booking creation.
+ */
 const AvailabilityResults = ({ results }) => {
-  const [selectedRoom, setSelectedRoom] = useState(null);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   if (!results) return null;
 
   const { check_in, check_out, guests_count, total_available, rooms = [] } = results;
 
-  // Calculate number of nights
   const calculateNights = (inDate, outDate) => {
     const start = new Date(inDate);
     const end = new Date(outDate);
@@ -24,6 +38,40 @@ const AvailabilityResults = ({ results }) => {
     return `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
   };
 
+  const handleSelectRoom = (room) => {
+    // Build booking intent to carry through the flow
+    const bookingIntent = {
+      room_id: room.room_id,
+      room_number: room.room_number,
+      room_type_id: room.room_type_id,
+      room_type_name: room.room_type_name,
+      max_occupancy: room.max_occupancy,
+      property_id: room.property_id,
+      property_name: room.property_name,
+      property_city: room.property_city,
+      property_star_rating: room.property_star_rating,
+      check_in_date: check_in,
+      check_out_date: check_out,
+      guests_count: guests_count,
+      nightly_rate: room.nightly_rate, // Display hint only; backend re-resolves on booking
+    };
+
+    if (!isAuthenticated) {
+      // Redirect to login, preserving intent so user returns here after login
+      navigate('/login', {
+        state: {
+          from: location.pathname + location.search,
+          bookingIntent,
+          message: 'Please sign in to complete your room booking.',
+        },
+      });
+      return;
+    }
+
+    // Authenticated: navigate to create booking page with all the state
+    navigate('/bookings/create', { state: { bookingIntent } });
+  };
+
   return (
     <div className="space-y-6">
       {/* Search Summary Header */}
@@ -34,7 +82,9 @@ const AvailabilityResults = ({ results }) => {
             <span>Search Results: {total_available} Room{total_available === 1 ? '' : 's'} Available</span>
           </h3>
           <p className="text-xs text-blue-800">
-            Dates: <strong className="font-bold">{check_in}</strong> to <strong className="font-bold">{check_out}</strong> ({nights} night{nights === 1 ? '' : 's'}) • {guests_count} Guest{guests_count === 1 ? '' : 's'}
+            Dates: <strong className="font-bold">{check_in}</strong> to{' '}
+            <strong className="font-bold">{check_out}</strong> ({nights} night{nights === 1 ? '' : 's'}) •{' '}
+            {guests_count} Guest{guests_count === 1 ? '' : 's'}
           </p>
         </div>
 
@@ -43,38 +93,17 @@ const AvailabilityResults = ({ results }) => {
         </div>
       </div>
 
-      {/* Notice Dialog when a room is selected */}
-      {selectedRoom && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3 animate-fadeIn">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
-              <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <h4 className="text-sm font-bold text-amber-900">
-                  Selected {selectedRoom.room_type_name} (Room #{selectedRoom.room_number})
-                </h4>
-                <p className="text-xs text-amber-800">
-                  Stay: {check_in} to {check_out} ({nights} nights) at {selectedRoom.property_name}.
-                  {selectedRoom.nightly_rate && (
-                    <> Total estimate: <strong>{formatINR(Number(selectedRoom.nightly_rate) * nights)}</strong>.</>
-                  )}
-                </p>
-                <p className="text-[11px] text-amber-700 italic pt-1">
-                  * Booking reservation creation and payment gateway will be enabled in Phase F4.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setSelectedRoom(null)}
-              className="text-amber-500 hover:text-amber-800 font-bold text-sm"
-            >
-              &times;
-            </button>
-          </div>
+      {/* Login nudge for unauthenticated users */}
+      {!isAuthenticated && rooms.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center space-x-2.5 text-xs text-amber-800">
+          <LogIn className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            <strong>Sign in</strong> to select a room and complete your booking reservation.
+          </span>
         </div>
       )}
 
-      {/* Results List or Empty State */}
+      {/* Results Grid or Empty State */}
       {rooms.length === 0 ? (
         <EmptyState
           title="No Available Rooms for Selected Dates"
@@ -92,7 +121,7 @@ const AvailabilityResults = ({ results }) => {
                 className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-3">
-                  {/* Top Bar: Property & Rating */}
+                  {/* Property & Rating */}
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1.5 text-slate-600 font-semibold truncate">
                       <Hotel className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -104,17 +133,15 @@ const AvailabilityResults = ({ results }) => {
                     </div>
                   </div>
 
-                  {/* Room Type & Room Number */}
+                  {/* Room Type & Number */}
                   <div>
-                    <h4 className="text-base font-extrabold text-slate-900">
-                      {room.room_type_name}
-                    </h4>
+                    <h4 className="text-base font-extrabold text-slate-900">{room.room_type_name}</h4>
                     <span className="inline-block text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded mt-1">
                       Room #{room.room_number}
                     </span>
                   </div>
 
-                  {/* Room Features */}
+                  {/* Capacity */}
                   <div className="flex items-center space-x-4 text-xs text-slate-500 pt-1">
                     <span className="flex items-center space-x-1">
                       <Users className="w-3.5 h-3.5 text-slate-400" />
@@ -122,7 +149,7 @@ const AvailabilityResults = ({ results }) => {
                     </span>
                     <span className="flex items-center space-x-1">
                       <Bed className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Luxury King / Double</span>
+                      <span>Luxury Accommodation</span>
                     </span>
                   </div>
                 </div>
@@ -138,24 +165,26 @@ const AvailabilityResults = ({ results }) => {
                         </div>
                         {totalCost && (
                           <div className="text-[11px] font-semibold text-emerald-700">
-                            Total: {formatINR(totalCost)} ({nights} nights)
+                            Est. {formatINR(totalCost)} ({nights} nights)
                           </div>
                         )}
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          Final price confirmed by server at booking.
+                        </div>
                       </div>
                     ) : (
-                      <div className="text-xs font-bold text-slate-500">
-                        Standard Seasonal Rate
-                      </div>
+                      <div className="text-xs font-bold text-slate-500">Standard Seasonal Rate</div>
                     )}
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => setSelectedRoom(room)}
-                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-all cursor-pointer"
+                    id={`select-room-${room.room_id}`}
+                    onClick={() => handleSelectRoom(room)}
+                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-all cursor-pointer shrink-0"
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
-                    <span>Select Room</span>
+                    <span>{isAuthenticated ? 'Select Room' : 'Sign In & Book'}</span>
                   </button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Hotel, User as UserIcon, LogOut, LogIn, UserPlus, LayoutDashboard, Calendar } from 'lucide-react';
+import { Hotel, User as UserIcon, LogOut, LogIn, UserPlus, LayoutDashboard, Calendar, CalendarDays } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
@@ -15,22 +15,28 @@ const Navbar = () => {
 
   const getRoleBadgeStyle = (role) => {
     switch (role) {
-      case 'owner':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'manager':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'staff':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      default:
-        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'owner':   return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'manager': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'staff':   return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      default:        return 'bg-amber-100 text-amber-800 border-amber-200';
     }
   };
+
+  const isActive = (path) => location.pathname === path;
+  const isStartsWith = (prefix) => location.pathname.startsWith(prefix);
+
+  const navLinkClass = (active) =>
+    `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+      active
+        ? 'text-blue-600 bg-blue-50 font-semibold'
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+    }`;
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Brand Logo */}
+          {/* Brand */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-900 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
               <Hotel className="w-6 h-6 text-white" />
@@ -46,36 +52,26 @@ const Navbar = () => {
           </Link>
 
           {/* Navigation Links */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <Link
-              to="/"
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                location.pathname === '/'
-                  ? 'text-blue-600 bg-blue-50 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <Link to="/" className={navLinkClass(isActive('/'))}>
               Home
             </Link>
 
             <Link
               to="/properties"
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/properties') && !location.pathname.includes('/availability')
-                  ? 'text-blue-600 bg-blue-50 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              className={navLinkClass(
+                isStartsWith('/properties') && !isStartsWith('/properties/') ? true
+                : isStartsWith('/properties') && !location.pathname.includes('/availability')
+              )}
             >
               Properties
             </Link>
 
             <Link
               to="/availability"
-              className={`hidden md:flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`hidden md:flex items-center space-x-1 ${navLinkClass(
                 location.pathname.includes('/availability')
-                  ? 'text-blue-600 bg-blue-50 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              )}`}
             >
               <Calendar className="w-4 h-4 text-blue-500" />
               <span>Availability</span>
@@ -83,34 +79,36 @@ const Navbar = () => {
 
             {isAuthenticated && (
               <Link
+                to="/my-bookings"
+                className={`hidden sm:flex items-center space-x-1 ${navLinkClass(
+                  isStartsWith('/my-bookings') || isStartsWith('/bookings')
+                )}`}
+              >
+                <CalendarDays className="w-4 h-4 text-blue-500" />
+                <span>My Bookings</span>
+              </Link>
+            )}
+
+            {isAuthenticated && (
+              <Link
                 to="/dashboard"
-                className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  location.pathname === '/dashboard'
-                    ? 'text-blue-600 bg-blue-50 font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
+                className={`hidden lg:flex items-center space-x-1.5 ${navLinkClass(isActive('/dashboard'))}`}
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span>Dashboard</span>
               </Link>
             )}
 
-            {/* Auth Actions */}
+            {/* Auth Section */}
             {isAuthenticated ? (
-              <div className="flex items-center space-x-3 pl-3 border-l border-slate-200">
-                <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
+                <div className="hidden lg:flex items-center space-x-2">
                   <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xs">
                     {user?.full_name?.charAt(0) || <UserIcon className="w-4 h-4" />}
                   </div>
-                  <div className="hidden lg:block text-left">
-                    <p className="text-xs font-bold text-slate-800 leading-tight">
-                      {user?.full_name}
-                    </p>
-                    <span
-                      className={`inline-block px-1.5 py-0.2 text-[9px] font-extrabold uppercase rounded border ${getRoleBadgeStyle(
-                        user?.role
-                      )}`}
-                    >
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-slate-800 leading-tight">{user?.full_name}</p>
+                    <span className={`inline-block px-1.5 text-[9px] font-extrabold uppercase rounded border ${getRoleBadgeStyle(user?.role)}`}>
                       {user?.role}
                     </span>
                   </div>
@@ -126,7 +124,7 @@ const Navbar = () => {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-2 pl-3 border-l border-slate-200">
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
                 <Link
                   to="/login"
                   className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors"
