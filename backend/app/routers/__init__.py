@@ -7,6 +7,7 @@ from app.routers.bookings import router as bookings_router
 from app.routers.payments import router as payments_router
 from app.routers.reviews import router as reviews_router
 from app.routers.availability import router as availability_router
+from app.routers.analytics import router as analytics_router
 
 __all__ = [
     "auth_router",
@@ -17,5 +18,6 @@ __all__ = [
     "bookings_router",
     "payments_router",
     "reviews_router",
-    "availability_router"
+    "availability_router",
+    "analytics_router"
 ]

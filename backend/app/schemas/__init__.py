@@ -52,6 +52,19 @@ from app.schemas.availability import (
     AvailableRoomResponse,
     AvailabilityResponse
 )
+from app.schemas.analytics import (
+    AnalyticsFilter,
+    BookingStatusBreakdown,
+    DashboardSummaryResponse,
+    BookingAnalyticsResponse,
+    RevenueByProperty,
+    RevenueAnalyticsResponse,
+    RatingDistribution,
+    ReviewAnalyticsResponse,
+    OccupancyAnalyticsResponse,
+    PropertyPerformanceItem,
+    PropertyPerformanceResponse
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -89,5 +102,16 @@ __all__ = [
     "ReviewResponse",
     "AvailabilityRequest",
     "AvailableRoomResponse",
-    "AvailabilityResponse"
+    "AvailabilityResponse",
+    "AnalyticsFilter",
+    "BookingStatusBreakdown",
+    "DashboardSummaryResponse",
+    "BookingAnalyticsResponse",
+    "RevenueByProperty",
+    "RevenueAnalyticsResponse",
+    "RatingDistribution",
+    "ReviewAnalyticsResponse",
+    "OccupancyAnalyticsResponse",
+    "PropertyPerformanceItem",
+    "PropertyPerformanceResponse"
 ]
