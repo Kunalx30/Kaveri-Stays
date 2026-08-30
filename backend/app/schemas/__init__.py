@@ -36,6 +36,11 @@ from app.schemas.booking import (
     BookingStatusUpdate,
     BookingResponse
 )
+from app.schemas.payment import (
+    PaymentCreate,
+    PaymentResponse,
+    PaymentSummaryResponse
+)
 
 __all__ = [
     "UserRegisterRequest",
@@ -63,5 +68,8 @@ __all__ = [
     "BookingCreate",
     "BookingUpdate",
     "BookingStatusUpdate",
-    "BookingResponse"
+    "BookingResponse",
+    "PaymentCreate",
+    "PaymentResponse",
+    "PaymentSummaryResponse"
 ]

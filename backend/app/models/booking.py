@@ -90,6 +90,14 @@ class Payment(Base):
     # Relationships
     booking = relationship("Booking", back_populates="payments")
 
+    @builtins.property
+    def property_id(self):
+        return self.booking.property_id if self.booking else None
+
+    @builtins.property
+    def guest_id(self):
+        return self.booking.guest_id if self.booking else None
+
 
 class Review(Base):
     __tablename__ = "reviews"
