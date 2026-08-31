@@ -3,6 +3,9 @@ from app.schemas.auth import (
     UserLoginRequest,
     TokenResponse,
     RefreshTokenRequest,
+    DevResetPasswordRequest,
+    DevDeleteTestUserRequest,
+    DevTestUserOperationResponse,
     UserResponse,
     AuthResponse
 )
@@ -71,6 +74,9 @@ __all__ = [
     "UserLoginRequest",
     "TokenResponse",
     "RefreshTokenRequest",
+    "DevResetPasswordRequest",
+    "DevDeleteTestUserRequest",
+    "DevTestUserOperationResponse",
     "UserResponse",
     "AuthResponse",
     "PropertyBase",

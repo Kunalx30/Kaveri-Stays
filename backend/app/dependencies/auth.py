@@ -52,6 +52,29 @@ def get_current_user(
     return user
 
 
+def get_optional_current_user(
+    db: Session = Depends(get_db),
+    token: Optional[str] = Depends(OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/token", auto_error=False))
+) -> Optional[User]:
+    """
+    Optional authentication dependency.
+    Returns the User object if a valid Bearer token is provided, or None if anonymous.
+    """
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
+            return None
+        user = db.query(User).filter(User.user_id == int(user_id_str)).first()
+        if user and user.is_active:
+            return user
+    except Exception:
+        return None
+    return None
+
+
 def require_roles(allowed_roles: List[UserRole]):
     """
     Role-based authorization dependency factory.

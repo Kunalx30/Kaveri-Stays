@@ -11,40 +11,40 @@ const STATUS_CONFIG = {
   confirmed: {
     label: 'Confirmed',
     icon: CheckCircle2,
-    className: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    iconColor: 'text-emerald-600',
+    className: 'bg-[#EAF3EE] text-[#1B4D3E] border-[#CDE3D6]',
+    iconColor: 'text-[#1B4D3E]',
   },
   checked_in: {
     label: 'Checked In',
     icon: LogIn,
-    className: 'bg-blue-50 text-blue-800 border-blue-200',
-    iconColor: 'text-blue-600',
+    className: 'bg-[#F5EDDE] text-[#7A5328] border-[#E8DAC2]',
+    iconColor: 'text-[#7A5328]',
   },
   checked_out: {
     label: 'Checked Out',
     icon: LogOut,
-    className: 'bg-slate-100 text-slate-700 border-slate-200',
-    iconColor: 'text-slate-500',
+    className: 'bg-[#EDE8E1] text-[#555E58] border-[#D8D0C5]',
+    iconColor: 'text-[#555E58]',
   },
   cancelled: {
     label: 'Cancelled',
     icon: XCircle,
-    className: 'bg-red-50 text-red-800 border-red-200',
-    iconColor: 'text-red-500',
+    className: 'bg-[#FDF2F2] text-[#8C3A3A] border-[#EACDCD]',
+    iconColor: 'text-[#8C3A3A]',
   },
   no_show: {
     label: 'No Show',
     icon: AlertTriangle,
-    className: 'bg-amber-50 text-amber-800 border-amber-200',
-    iconColor: 'text-amber-600',
+    className: 'bg-[#FBF0E4] text-[#8C581E] border-[#EAD2BA]',
+    iconColor: 'text-[#8C581E]',
   },
 };
 
 const FALLBACK = {
   label: 'Unknown',
   icon: Clock,
-  className: 'bg-slate-100 text-slate-600 border-slate-200',
-  iconColor: 'text-slate-400',
+  className: 'bg-[#F4EFEA] text-[#6A726D] border-[#E6DFD5]',
+  iconColor: 'text-[#6A726D]',
 };
 
 /**
@@ -56,7 +56,7 @@ export const canGuestCancel = (status) => status === 'confirmed';
 
 /**
  * BookingStatus badge component.
- * Renders the actual backend status with icon, colour-coded pill.
+ * Renders the actual backend status with icon, colour-coded pill in hospitality style.
  *
  * @param {{ status: string, size?: 'sm'|'md'|'lg' }} props
  */
@@ -65,10 +65,10 @@ const BookingStatus = ({ status, size = 'sm' }) => {
   const Icon = config.icon;
 
   const sizeClass = {
-    sm: 'text-[10px] px-2 py-0.5',
-    md: 'text-xs px-2.5 py-1',
-    lg: 'text-sm px-3 py-1.5',
-  }[size] || 'text-[10px] px-2 py-0.5';
+    sm: 'text-[10px] px-2.5 py-0.5',
+    md: 'text-xs px-3 py-1',
+    lg: 'text-sm px-3.5 py-1.5',
+  }[size] || 'text-[10px] px-2.5 py-0.5';
 
   const iconSize = {
     sm: 'w-3 h-3',
@@ -78,7 +78,7 @@ const BookingStatus = ({ status, size = 'sm' }) => {
 
   return (
     <span
-      className={`inline-flex items-center space-x-1 rounded-full border font-extrabold uppercase tracking-wider ${sizeClass} ${config.className}`}
+      className={`inline-flex items-center space-x-1.5 rounded-full border font-bold uppercase tracking-wider ${sizeClass} ${config.className}`}
     >
       <Icon className={`${iconSize} ${config.iconColor} shrink-0`} />
       <span>{config.label}</span>

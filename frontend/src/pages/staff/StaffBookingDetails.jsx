@@ -1,37 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  Hash, Hotel, Users, CalendarCheck, CalendarX, FileText,
-  Clock, ArrowLeft, Loader2, AlertCircle, LogIn, LogOut,
-  AlertTriangle, CreditCard, ChevronRight, ShieldCheck, CheckCircle2,
+  Hash, Users, CalendarCheck, CalendarX, FileText,
+  ArrowLeft, Loader2, AlertCircle, LogIn, LogOut,
+  AlertTriangle, CreditCard, CheckCircle2, BedDouble, MapPin,
 } from 'lucide-react';
 import {
   getStaffBookingByIdApi, checkInBookingApi, checkOutBookingApi, markNoShowApi,
 } from '../../api/staff';
 import { getBookingPaymentSummaryApi } from '../../api/payments';
 import BookingStatus from '../../components/booking/BookingStatus';
-import { PaymentSettlementBadge, PaymentMethodBadge } from '../../components/payment/PaymentStatus';
+import { PaymentSettlementBadge } from '../../components/payment/PaymentStatus';
 import OperationalActionDialog from '../../components/staff/OperationalActionDialog';
 import ErrorMessage from '../../components/common/ErrorMessage';
 
 const formatINR = (val) => {
   if (val == null) return '—';
-  return `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+  return `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`;
 };
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-IN', {
-    weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   });
 };
 
 const formatDatetime = (dtStr) => {
   if (!dtStr) return '—';
-  return new Date(dtStr).toLocaleString('en-IN', {
-    day: '2-digit', month: 'short', year: 'numeric',
+  return new Date(dtStr).toLocaleString('en-US', {
+    day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit', hour12: true,
   });
+};
+
+const parseErrorDetail = (err, fallbackMsg) => {
+  const detail = err.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((d) => (typeof d === 'string' ? d : d.msg || JSON.stringify(d))).join('. ');
+  }
+  return fallbackMsg;
 };
 
 const StaffBookingDetails = () => {
@@ -50,7 +59,7 @@ const StaffBookingDetails = () => {
   });
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  const fetchDetails = async () => {
+  const fetchDetails = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
@@ -66,39 +75,42 @@ const StaffBookingDetails = () => {
       } else if (err.response?.status === 403) {
         setError('Access denied: You do not have permission to view this property booking.');
       } else {
-        setError('Failed to load operational booking details.');
+        setError(parseErrorDetail(err, 'Failed to load operational booking details.'));
       }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [bookingId]);
 
   useEffect(() => {
     fetchDetails();
-  }, [bookingId]);
+  }, [fetchDetails]);
 
   const handleActionConfirm = async () => {
     const { actionType } = actionDialog;
+    if (isActionLoading) return;
+
     setIsActionLoading(true);
     setError('');
+    setActionSuccess('');
     try {
       if (actionType === 'check_in') {
         const updated = await checkInBookingApi(Number(bookingId));
         setBooking(updated);
-        setActionSuccess('Guest checked in successfully!');
+        setActionSuccess('Guest checked in successfully.');
       } else if (actionType === 'check_out') {
         const updated = await checkOutBookingApi(Number(bookingId));
         setBooking(updated);
-        setActionSuccess('Guest checked out successfully!');
+        setActionSuccess('Guest checked out successfully. Room queued for turnover.');
       } else if (actionType === 'no_show') {
         const updated = await markNoShowApi(Number(bookingId));
         setBooking(updated);
-        setActionSuccess('Reservation marked as No-Show.');
+        setActionSuccess('Reservation marked as No-Show. Inventory released.');
       }
 
       setActionDialog({ isOpen: false, actionType: 'check_in' });
     } catch (err) {
-      setError(err.response?.data?.detail || `Failed to perform ${actionType.replace('_', ' ')}.`);
+      setError(parseErrorDetail(err, `Failed to perform ${actionType.replace('_', ' ')}.`));
       setActionDialog({ isOpen: false, actionType: 'check_in' });
     } finally {
       setIsActionLoading(false);
@@ -107,9 +119,9 @@ const StaffBookingDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-3">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-        <p className="text-sm font-semibold text-slate-500 animate-pulse">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center py-20 space-y-3">
+        <Loader2 className="w-8 h-8 text-[#253B33] animate-spin" />
+        <p className="text-sm font-medium text-[#5A635F]">
           Loading operational record...
         </p>
       </div>
@@ -118,13 +130,13 @@ const StaffBookingDetails = () => {
 
   if (error && !booking) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
-        <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
-        <h2 className="text-lg font-bold text-slate-800">Booking Record Unavailable</h2>
-        <p className="text-sm text-slate-500">{error}</p>
+      <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-4">
+        <AlertCircle className="w-10 h-10 text-[#8C3A3A] mx-auto" />
+        <h2 className="font-serif text-2xl text-[#16231E]">Booking Record Unavailable</h2>
+        <p className="text-sm text-[#5A635F]">{error}</p>
         <Link
           to="/staff/bookings"
-          className="inline-block mt-2 px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm"
+          className="inline-block mt-4 px-6 py-2.5 bg-[#16231E] hover:bg-[#253B33] text-white font-semibold rounded-xl text-xs sm:text-sm transition-colors"
         >
           Back to Staff Bookings
         </Link>
@@ -141,7 +153,7 @@ const StaffBookingDetails = () => {
   } = booking;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+    <div className="min-h-screen bg-[#FBF9F5] text-[#1A1E1C]">
       {actionDialog.isOpen && (
         <OperationalActionDialog
           actionType={actionDialog.actionType}
@@ -152,237 +164,240 @@ const StaffBookingDetails = () => {
         />
       )}
 
-      {/* Back Navigation */}
-      <div className="flex items-center justify-between">
-        <Link
-          to="/staff/bookings"
-          className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Staff Bookings</span>
-        </Link>
-
-        <Link
-          to="/staff"
-          className="text-xs font-bold text-blue-600 hover:underline"
-        >
-          Staff Dashboard →
-        </Link>
-      </div>
-
-      {/* Action Success Alert */}
-      {actionSuccess && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between text-xs text-emerald-800">
-          <div className="flex items-center space-x-2 font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{actionSuccess}</span>
-          </div>
-          <button
-            onClick={() => setActionSuccess('')}
-            className="text-emerald-500 hover:text-emerald-700 font-bold ml-3"
-          >
-            &times;
-          </button>
-        </div>
-      )}
-
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">
-            <Hash className="w-3.5 h-3.5" />
-            <span>Operational File #{booking_id}</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Room #{room_id} Reservation
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Created on {formatDatetime(created_at)}
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <BookingStatus status={status} size="md" />
-          {paymentSummary && (
-            <PaymentSettlementBadge
-              isFullyPaid={paymentSummary.is_fully_paid}
-              totalPaid={paymentSummary.total_paid}
-              size="md"
-            />
-          )}
-        </div>
-      </div>
-
-      <ErrorMessage message={error} onDismiss={() => setError('')} />
-
-      {/* Operational Actions Toolbar Card */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-          Front Desk Actions
-        </h2>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Check-In Action (Only when Confirmed) */}
-          {status === 'confirmed' && (
-            <button
-              type="button"
-              id="staff-checkin-btn"
-              onClick={() => setActionDialog({ isOpen: true, actionType: 'check_in' })}
-              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20 transition-all flex items-center space-x-2 cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>Perform Check-In</span>
-            </button>
-          )}
-
-          {/* Check-Out Action (Only when Checked In) */}
-          {status === 'checked_in' && (
-            <button
-              type="button"
-              id="staff-checkout-btn"
-              onClick={() => setActionDialog({ isOpen: true, actionType: 'check_out' })}
-              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-500/20 transition-all flex items-center space-x-2 cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Perform Check-Out</span>
-            </button>
-          )}
-
-          {/* No-Show Action (Only when Confirmed) */}
-          {status === 'confirmed' && (
-            <button
-              type="button"
-              id="staff-noshow-btn"
-              onClick={() => setActionDialog({ isOpen: true, actionType: 'no_show' })}
-              className="px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors flex items-center space-x-1.5 cursor-pointer"
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Mark No-Show</span>
-            </button>
-          )}
-
-          {/* Record Payment Action */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
+        
+        {/* Back Navigation */}
+        <div className="flex items-center justify-between">
           <Link
-            to={`/bookings/${booking_id}/payment`}
-            className="px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors flex items-center space-x-1.5"
+            to="/staff/bookings"
+            className="inline-flex items-center space-x-1.5 text-xs font-semibold text-[#8A6240] hover:text-[#16231E] transition-colors"
           >
-            <CreditCard className="w-3.5 h-3.5 text-blue-600" />
-            <span>Record / View Payments</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Staff Bookings</span>
+          </Link>
+
+          <Link
+            to="/staff"
+            className="text-xs font-semibold text-[#5A635F] hover:text-[#16231E] transition-colors"
+          >
+            Staff Dashboard →
           </Link>
         </div>
 
-        {/* Terminal Status Notices */}
-        {status === 'checked_out' && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600">
-            Guest has completed stay and checked out. Room is queued for turnover.
+        {/* Action Success Alert */}
+        {actionSuccess && (
+          <div className="bg-[#EAF3EE] border border-[#CDE3D6] rounded-2xl p-4 flex items-center justify-between text-xs text-[#1B4D3E]">
+            <div className="flex items-center space-x-2 font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-[#1B4D3E] shrink-0" />
+              <span>{actionSuccess}</span>
+            </div>
+            <button
+              onClick={() => setActionSuccess('')}
+              className="text-[#2A6E59] hover:text-[#1B4D3E] font-bold ml-3 text-lg leading-none"
+              aria-label="Dismiss message"
+            >
+              &times;
+            </button>
           </div>
         )}
-        {status === 'no_show' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
-            This reservation was marked as a No-Show. Room inventory has been returned to stock.
-          </div>
-        )}
-        {status === 'cancelled' && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700">
-            This reservation was cancelled.
-          </div>
-        )}
-      </div>
 
-      {/* Guest & Stay Metadata Card */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-6">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-          Reservation & Guest Profile
-        </h2>
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#E6DFD5]">
+          <div className="space-y-1">
+            <span className="text-[10px] uppercase font-bold tracking-[0.24em] text-[#8A6240] block">
+              Operational File #{booking_id}
+            </span>
+            <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#16231E] tracking-tight">
+              Room #{room_id} Reservation
+            </h1>
+            <p className="text-xs text-[#7A857F]">
+              Booked on {formatDatetime(created_at)}
+            </p>
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wider font-semibold block">Guest ID</span>
-            <span className="font-bold text-slate-800">#{guest_id}</span>
-          </div>
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wider font-semibold block">Assigned Room</span>
-            <span className="font-bold text-slate-800">Room #{room_id}</span>
-          </div>
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wider font-semibold block">Property ID</span>
-            <span className="font-bold text-slate-800">#{property_id || '1'}</span>
-          </div>
-          <div>
-            <span className="text-slate-400 text-xs uppercase tracking-wider font-semibold block">Occupancy</span>
-            <span className="font-bold text-slate-800">{guests_count} Guests</span>
+          <div className="flex items-center space-x-2.5 self-start sm:self-auto">
+            <BookingStatus status={status} size="md" />
+            {paymentSummary && (
+              <PaymentSettlementBadge
+                isFullyPaid={paymentSummary.is_fully_paid}
+                totalPaid={paymentSummary.total_paid}
+                size="md"
+              />
+            )}
           </div>
         </div>
 
-        <div className="border-t border-slate-100" />
+        <ErrorMessage message={error} onDismiss={() => setError('')} />
 
-        {/* Itinerary */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-50 rounded-2xl p-4 space-y-1">
-            <div className="flex items-center space-x-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider">
-              <CalendarCheck className="w-3.5 h-3.5 text-blue-600" />
-              <span>Arrival (Check-In)</span>
-            </div>
-            <p className="text-sm font-bold text-slate-800">{formatDate(check_in_date)}</p>
-          </div>
+        {/* Operational Actions Toolbar Card */}
+        <div className="bg-white border border-[#E6DFD5] rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A6240]">
+            Front Desk Actions
+          </h2>
 
-          <div className="bg-slate-50 rounded-2xl p-4 space-y-1">
-            <div className="flex items-center space-x-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider">
-              <CalendarX className="w-3.5 h-3.5 text-blue-600" />
-              <span>Departure (Check-Out)</span>
-            </div>
-            <p className="text-sm font-bold text-slate-800">{formatDate(check_out_date)}</p>
-          </div>
-        </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Check-In Action (Only when Confirmed) */}
+            {status === 'confirmed' && (
+              <button
+                type="button"
+                id="staff-checkin-btn"
+                onClick={() => setActionDialog({ isOpen: true, actionType: 'check_in' })}
+                className="px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-[#16231E] hover:bg-[#253B33] text-white shadow-xs transition-colors flex items-center space-x-2 cursor-pointer"
+              >
+                <LogIn className="w-4 h-4 text-amber-200" />
+                <span>Perform Check-In</span>
+              </button>
+            )}
 
-        {/* Special Requests */}
-        {notes && (
-          <>
-            <div className="border-t border-slate-100" />
-            <div className="space-y-1.5">
-              <span className="text-slate-400 text-xs uppercase tracking-wider font-semibold flex items-center space-x-1">
-                <FileText className="w-3 h-3" />
-                <span>Guest Notes & Requests</span>
-              </span>
-              <p className="text-xs text-slate-700 italic bg-slate-50 p-3 rounded-xl">
-                "{notes}"
-              </p>
-            </div>
-          </>
-        )}
-      </div>
+            {/* Check-Out Action (Only when Checked In) */}
+            {status === 'checked_in' && (
+              <button
+                type="button"
+                id="staff-checkout-btn"
+                onClick={() => setActionDialog({ isOpen: true, actionType: 'check_out' })}
+                className="px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-[#1B4D3E] hover:bg-[#143B30] text-white shadow-xs transition-colors flex items-center space-x-2 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4 text-emerald-200" />
+                <span>Perform Check-Out</span>
+              </button>
+            )}
 
-      {/* Financial Ledger Section */}
-      {paymentSummary && (
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Financial Breakdown & Settlement
-            </h2>
+            {/* No-Show Action (Only when Confirmed) */}
+            {status === 'confirmed' && (
+              <button
+                type="button"
+                id="staff-noshow-btn"
+                onClick={() => setActionDialog({ isOpen: true, actionType: 'no_show' })}
+                className="px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-[#FBF0E4] hover:bg-[#F5E2CC] text-[#8C581E] border border-[#EAD2BA] transition-colors flex items-center space-x-1.5 cursor-pointer"
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>Mark No-Show</span>
+              </button>
+            )}
+
+            {/* Record Payment Action */}
             <Link
               to={`/bookings/${booking_id}/payment`}
-              className="text-xs font-bold text-blue-600 hover:underline"
+              className="px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-[#EDE8E1] hover:bg-[#E2DDD5] text-[#16231E] border border-[#D8D0C5] transition-colors flex items-center space-x-1.5"
             >
-              Open Payment Terminal →
+              <CreditCard className="w-3.5 h-3.5 text-[#8A6240]" />
+              <span>Record / View Payments</span>
             </Link>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 text-xs bg-slate-50 p-4 rounded-2xl">
+          {/* Terminal Status Notices */}
+          {status === 'checked_out' && (
+            <div className="bg-[#F4EFEA] border border-[#E6DFD5] rounded-2xl p-3.5 text-xs text-[#5A635F]">
+              Guest has completed their stay and checked out. Room is queued for housekeeping turnover.
+            </div>
+          )}
+          {status === 'no_show' && (
+            <div className="bg-[#FBF0E4] border border-[#EAD2BA] rounded-2xl p-3.5 text-xs text-[#8C581E]">
+              This reservation was marked as a No-Show. Room inventory has been returned to stock.
+            </div>
+          )}
+          {status === 'cancelled' && (
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 text-xs text-rose-800">
+              This reservation was cancelled.
+            </div>
+          )}
+        </div>
+
+        {/* Guest & Stay Metadata Card */}
+        <div className="bg-white border border-[#E6DFD5] rounded-3xl p-6 sm:p-7 shadow-xs space-y-6">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A6240]">
+            Reservation & Guest Profile
+          </h2>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs sm:text-sm">
             <div>
-              <span className="text-slate-400 block">Total Rate</span>
-              <span className="text-sm font-black text-slate-900">{formatINR(paymentSummary.total_booking_amount)}</span>
+              <span className="text-[#7A857F] text-[10px] uppercase tracking-wider font-bold block">Guest ID</span>
+              <span className="font-semibold text-[#16231E] mt-0.5 block">#{guest_id}</span>
             </div>
             <div>
-              <span className="text-slate-400 block">Total Paid</span>
-              <span className="text-sm font-black text-emerald-700">{formatINR(paymentSummary.total_paid)}</span>
+              <span className="text-[#7A857F] text-[10px] uppercase tracking-wider font-bold block">Assigned Room</span>
+              <span className="font-semibold text-[#16231E] mt-0.5 block">Room #{room_id}</span>
             </div>
             <div>
-              <span className="text-slate-400 block">Remaining</span>
-              <span className="text-sm font-black text-blue-700">{formatINR(paymentSummary.remaining_balance)}</span>
+              <span className="text-[#7A857F] text-[10px] uppercase tracking-wider font-bold block">Property</span>
+              <span className="font-semibold text-[#16231E] mt-0.5 block">Property #{property_id || '1'}</span>
+            </div>
+            <div>
+              <span className="text-[#7A857F] text-[10px] uppercase tracking-wider font-bold block">Party Size</span>
+              <span className="font-semibold text-[#16231E] mt-0.5 block">{guests_count} Guests</span>
             </div>
           </div>
+
+          <div className="border-t border-[#E6DFD5]" />
+
+          {/* Itinerary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-[#FBF9F5] border border-[#E6DFD5] rounded-2xl p-4 space-y-1">
+              <div className="flex items-center space-x-1.5 text-[10px] text-[#8A6240] font-bold uppercase tracking-wider">
+                <CalendarCheck className="w-3.5 h-3.5" />
+                <span>Arrival (Check-In)</span>
+              </div>
+              <p className="text-sm font-semibold text-[#16231E]">{formatDate(check_in_date)}</p>
+            </div>
+
+            <div className="bg-[#FBF9F5] border border-[#E6DFD5] rounded-2xl p-4 space-y-1">
+              <div className="flex items-center space-x-1.5 text-[10px] text-[#8A6240] font-bold uppercase tracking-wider">
+                <CalendarX className="w-3.5 h-3.5" />
+                <span>Departure (Check-Out)</span>
+              </div>
+              <p className="text-sm font-semibold text-[#16231E]">{formatDate(check_out_date)}</p>
+            </div>
+          </div>
+
+          {/* Special Requests */}
+          {notes && (
+            <>
+              <div className="border-t border-[#E6DFD5]" />
+              <div className="space-y-1.5">
+                <span className="text-[#7A857F] text-[10px] uppercase tracking-wider font-bold flex items-center space-x-1">
+                  <FileText className="w-3 h-3 text-[#8A6240]" />
+                  <span>Guest Notes & Requests</span>
+                </span>
+                <p className="text-xs text-[#5A635F] italic bg-[#FBF9F5] border border-[#E6DFD5] p-3.5 rounded-xl">
+                  "{notes}"
+                </p>
+              </div>
+            </>
+          )}
         </div>
-      )}
+
+        {/* Financial Breakdown Section */}
+        {paymentSummary && (
+          <div className="bg-white border border-[#E6DFD5] rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A6240]">
+                Financial Settlement Breakdown
+              </h2>
+              <Link
+                to={`/bookings/${booking_id}/payment`}
+                className="text-xs font-semibold text-[#16231E] hover:text-[#8A6240] transition-colors"
+              >
+                Open Payment Terminal →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-xs bg-[#F4EFEA] border border-[#E6DFD5] p-4 sm:p-5 rounded-2xl">
+              <div>
+                <span className="text-[#7A857F] block text-[10px] uppercase font-bold">Total Cost</span>
+                <span className="font-serif text-lg sm:text-xl font-normal text-[#16231E] block mt-0.5">{formatINR(paymentSummary.total_booking_amount)}</span>
+              </div>
+              <div>
+                <span className="text-[#1B4D3E] block text-[10px] uppercase font-bold">Settled</span>
+                <span className="font-serif text-lg sm:text-xl font-normal text-[#1B4D3E] block mt-0.5">{formatINR(paymentSummary.total_paid)}</span>
+              </div>
+              <div>
+                <span className="text-[#8A6240] block text-[10px] uppercase font-bold">Remaining</span>
+                <span className="font-serif text-lg sm:text-xl font-normal text-[#8A6240] block mt-0.5">{formatINR(paymentSummary.remaining_balance)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

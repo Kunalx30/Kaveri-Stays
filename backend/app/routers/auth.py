@@ -11,6 +11,9 @@ from app.schemas.auth import (
     UserLoginRequest,
     TokenResponse,
     RefreshTokenRequest,
+    DevResetPasswordRequest,
+    DevDeleteTestUserRequest,
+    DevTestUserOperationResponse,
     UserResponse,
     AuthResponse
 )
@@ -98,3 +101,31 @@ def get_me(current_user: User = Depends(get_current_user)):
     Role and property assignment are loaded live from the database.
     """
     return current_user
+
+
+@router.post("/dev/test-users/reset-password", response_model=DevTestUserOperationResponse, include_in_schema=True)
+def dev_reset_test_user_password(
+    data: DevResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Development/testing only: reset a specifically identified test user's password.
+
+    Disabled unless ENABLE_DEV_AUTH_UTILS=true, DEV_AUTH_UTILS_TOKEN is configured,
+    and ENVIRONMENT is development/local/test/testing. Does not expose password hashes.
+    """
+    return auth_service.reset_test_user_password(db, data.email, data.new_password, data.admin_token)
+
+
+@router.delete("/dev/test-users", response_model=DevTestUserOperationResponse, include_in_schema=True)
+def dev_delete_test_user_login(
+    data: DevDeleteTestUserRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Development/testing only: delete a specifically identified test user's login account.
+
+    Guest, bookings, payments, and reviews are preserved. Auth-side child records such as
+    refresh tokens and payment idempotency records are removed with the user.
+    """
+    return auth_service.delete_test_user_login(db, data.email, data.confirm_email, data.admin_token)

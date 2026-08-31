@@ -19,7 +19,7 @@ const RoomTypeModal = ({
     if (roomType) {
       setFormData({
         name: roomType.name || '',
-        max_occupancy: roomType.max_occupancy || 2,
+        max_occupancy: roomType.max_occupancy ?? 2,
       });
     } else {
       setFormData({
@@ -43,8 +43,8 @@ const RoomTypeModal = ({
       setError('Room type name must be between 2 and 50 characters.');
       return;
     }
-    if (occ < 1 || occ > 20) {
-      setError('Maximum occupancy must be between 1 and 20 guests.');
+    if (isNaN(occ) || occ < 1 || occ > 20) {
+      setError('Maximum occupancy must be a number between 1 and 20 guests.');
       return;
     }
 

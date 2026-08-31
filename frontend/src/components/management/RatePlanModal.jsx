@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tag, X, Loader2, Hotel, Grid, Calendar, DollarSign } from 'lucide-react';
+import { Tag, X, Loader2, Hotel, Grid } from 'lucide-react';
 import ErrorMessage from '../common/ErrorMessage';
 
 const RatePlanModal = ({
@@ -14,8 +14,8 @@ const RatePlanModal = ({
   isLoading,
 }) => {
   const [formData, setFormData] = useState({
-    property_id: defaultPropertyId || (properties[0]?.property_id ?? 1),
-    room_type_id: roomTypes[0]?.room_type_id ?? 1,
+    property_id: defaultPropertyId || properties[0]?.property_id || null,
+    room_type_id: roomTypes[0]?.room_type_id || null,
     season_name: '',
     valid_from: '',
     valid_to: '',
@@ -39,8 +39,8 @@ const RatePlanModal = ({
       nextMonth.setMonth(today.getMonth() + 1);
 
       setFormData({
-        property_id: defaultPropertyId || (properties[0]?.property_id ?? 1),
-        room_type_id: roomTypes[0]?.room_type_id ?? 1,
+        property_id: defaultPropertyId || properties[0]?.property_id || null,
+        room_type_id: roomTypes[0]?.room_type_id || null,
         season_name: 'Standard Seasonal Plan',
         valid_from: today.toISOString().split('T')[0],
         valid_to: nextMonth.toISOString().split('T')[0],
@@ -73,6 +73,16 @@ const RatePlanModal = ({
     }
     if (isNaN(rate) || rate <= 0) {
       setError('Nightly rate must be a valid positive amount.');
+      return;
+    }
+
+    // Validate that required lookups are present before submitting
+    if (!ratePlan && !formData.property_id) {
+      setError('No property available. Please ensure at least one property exists.');
+      return;
+    }
+    if (!formData.room_type_id) {
+      setError('No room type available. Please ensure at least one room type exists.');
       return;
     }
 

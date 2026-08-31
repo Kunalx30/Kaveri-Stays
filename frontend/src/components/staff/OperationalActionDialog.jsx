@@ -4,27 +4,27 @@ import { LogIn, LogOut, AlertTriangle, X, Loader2 } from 'lucide-react';
 const ACTION_CONFIG = {
   check_in: {
     title: 'Confirm Guest Check-In',
-    desc: 'This will transition the reservation to Checked In status. Ensure the guest is physically present and identity is verified.',
+    desc: 'This will transition the reservation to Checked In status. Ensure the guest is physically present at the retreat and identity is verified.',
     confirmLabel: 'Confirm Check-In',
-    btnClass: 'bg-blue-600 hover:bg-blue-700 text-white',
+    btnClass: 'bg-[#16231E] hover:bg-[#253B33] text-white',
     icon: LogIn,
-    iconBg: 'bg-blue-100 text-blue-600',
+    iconBg: 'bg-[#F4EFEA] text-[#8A6240] border border-[#E6DFD5]',
   },
   check_out: {
     title: 'Confirm Guest Check-Out',
-    desc: 'This will transition the reservation to Checked Out status and release the room for housekeeping. Ensure any incidental balances are settled.',
+    desc: 'This will transition the reservation to Checked Out status and release the room for housekeeping turnover. Ensure any remaining balances are settled.',
     confirmLabel: 'Complete Check-Out',
-    btnClass: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+    btnClass: 'bg-[#1B4D3E] hover:bg-[#143B30] text-white',
     icon: LogOut,
-    iconBg: 'bg-emerald-100 text-emerald-600',
+    iconBg: 'bg-[#EAF3EE] text-[#1B4D3E] border border-[#CDE3D6]',
   },
   no_show: {
     title: 'Mark as No-Show',
-    desc: 'This will mark the reservation as No-Show and release the room inventory back to available stock. This action is terminal.',
+    desc: 'This will mark the reservation as No-Show and release the room inventory back to available stock. This operational action is final.',
     confirmLabel: 'Mark No-Show',
-    btnClass: 'bg-amber-600 hover:bg-amber-700 text-white',
+    btnClass: 'bg-[#8C581E] hover:bg-[#744715] text-white',
     icon: AlertTriangle,
-    iconBg: 'bg-amber-100 text-amber-600',
+    iconBg: 'bg-[#FBF0E4] text-[#8C581E] border border-[#EAD2BA]',
   },
 };
 
@@ -49,48 +49,54 @@ const OperationalActionDialog = ({
   const config = ACTION_CONFIG[actionType] || ACTION_CONFIG.check_in;
   const Icon = config.icon;
 
+  const handleDismiss = () => {
+    if (isLoading) return;
+    onDismiss();
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="op-action-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 space-y-4 animate-fadeIn">
+      <div className="bg-white rounded-3xl shadow-2xl border border-[#E6DFD5] p-6 sm:p-7 max-w-md w-full space-y-5">
         <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2.5">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${config.iconBg}`}>
+          <div className="flex items-center space-x-3">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${config.iconBg}`}>
               <Icon className="w-5 h-5" />
             </div>
-            <h2 id="op-action-title" className="text-base font-black text-slate-900">
+            <h2 id="op-action-title" className="text-base font-bold text-[#16231E]">
               {config.title}
             </h2>
           </div>
           <button
-            onClick={onDismiss}
+            type="button"
+            onClick={handleDismiss}
             disabled={isLoading}
-            className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+            className="text-[#7A857F] hover:text-[#16231E] transition-colors cursor-pointer disabled:opacity-50 p-1 -mt-0.5"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-2 text-xs text-slate-600">
-          <p className="font-semibold text-slate-800">
-            Booking ID: <strong>#{bookingId}</strong>
+        <div className="space-y-2 text-xs text-[#5A635F]">
+          <p className="font-semibold text-[#16231E]">
+            Reservation: <strong className="text-[#8A6240]">#{bookingId}</strong>
           </p>
-          <p className="text-slate-500 leading-relaxed">
+          <p className="leading-relaxed text-[#7A857F]">
             {config.desc}
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 pt-2">
+        <div className="flex items-center gap-3 pt-2">
           <button
             type="button"
-            onClick={onDismiss}
+            onClick={handleDismiss}
             disabled={isLoading}
-            className="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50 cursor-pointer"
+            className="flex-1 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#16231E] bg-[#EDE8E1] hover:bg-[#E2DDD5] border border-[#D8D0C5] transition-colors disabled:opacity-50 cursor-pointer"
           >
             Cancel
           </button>
@@ -99,7 +105,7 @@ const OperationalActionDialog = ({
             id="confirm-operational-action-btn"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-60 ${config.btnClass}`}
+            className={`flex-1 px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-60 shadow-sm ${config.btnClass}`}
           >
             {isLoading ? (
               <>

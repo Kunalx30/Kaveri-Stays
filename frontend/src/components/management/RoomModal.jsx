@@ -14,8 +14,8 @@ const RoomModal = ({
   isLoading,
 }) => {
   const [formData, setFormData] = useState({
-    property_id: defaultPropertyId || (properties[0]?.property_id ?? 1),
-    room_type_id: roomTypes[0]?.room_type_id ?? 1,
+    property_id: defaultPropertyId || properties[0]?.property_id || null,
+    room_type_id: roomTypes[0]?.room_type_id || null,
     room_number: '',
   });
   const [error, setError] = useState('');
@@ -29,8 +29,8 @@ const RoomModal = ({
       });
     } else {
       setFormData({
-        property_id: defaultPropertyId || (properties[0]?.property_id ?? 1),
-        room_type_id: roomTypes[0]?.room_type_id ?? 1,
+        property_id: defaultPropertyId || properties[0]?.property_id || null,
+        room_type_id: roomTypes[0]?.room_type_id || null,
         room_number: '',
       });
     }
@@ -50,6 +50,16 @@ const RoomModal = ({
     }
     if (trimmedNum.length > 10) {
       setError('Room number must be at most 10 characters.');
+      return;
+    }
+
+    // Validate that required lookups are present before submitting
+    if (!room && !formData.property_id) {
+      setError('No property available. Please ensure at least one property exists.');
+      return;
+    }
+    if (!formData.room_type_id) {
+      setError('No room type available. Please ensure at least one room type exists.');
       return;
     }
 
@@ -110,7 +120,8 @@ const RoomModal = ({
             </label>
             {room ? (
               <div className="p-2.5 bg-slate-100 rounded-xl text-slate-700 font-semibold border border-slate-200">
-                Property #{room.property_id} (Immutable)
+                {properties.find((p) => p.property_id === room.property_id)?.name || `Property #${room.property_id}`}{' '}
+                <span className="text-xs font-normal text-slate-500">(Immutable)</span>
               </div>
             ) : (
               <select

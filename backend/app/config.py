@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     # Rate Limiting & Security Settings
     AUTH_RATE_LIMIT_PER_MINUTE: int = 120
     ENABLE_SECURITY_HEADERS: bool = True
+    ENABLE_DEV_AUTH_UTILS: bool = False
+    DEV_AUTH_UTILS_TOKEN: str = ""
 
     model_config = SettingsConfigDict(
         env_file=(str(ENV_FILE), ".env"),

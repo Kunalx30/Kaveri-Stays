@@ -11,13 +11,14 @@ from app.core.security import (
     create_access_token,
     hash_token
 )
-from app.models import User, Guest, RefreshToken, UserRole
+from app.models import User, Guest, Booking, Payment, PaymentIdempotency, RefreshToken, Review, UserRole
 from app.schemas.auth import (
     UserRegisterRequest,
     UserLoginRequest,
     TokenResponse,
     UserResponse,
-    AuthResponse
+    AuthResponse,
+    DevTestUserOperationResponse
 )
 
 
@@ -192,3 +193,105 @@ def revoke_refresh_token(db: Session, refresh_token_str: str) -> None:
     if db_token:
         db_token.revoked = True
         db.commit()
+
+
+def assert_dev_auth_utils_allowed(admin_token: str) -> None:
+    """
+    Gate development-only account utilities.
+    These endpoints must not become a production password recovery surface.
+    """
+    if settings.ENVIRONMENT.lower() not in {"development", "dev", "local", "test", "testing"}:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found.")
+
+    if not settings.ENABLE_DEV_AUTH_UTILS or not settings.DEV_AUTH_UTILS_TOKEN:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found.")
+
+    if not secrets.compare_digest(admin_token, settings.DEV_AUTH_UTILS_TOKEN):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid development admin token.")
+
+
+def _get_user_by_email(db: Session, email: str) -> User:
+    normalized_email = email.strip().lower()
+    user = db.query(User).filter(
+        func.lower(func.trim(User.email)) == normalized_email
+    ).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test user not found.")
+    return user
+
+
+def _related_record_counts(db: Session, user: User) -> dict:
+    guest_id = user.guest_id
+    if not guest_id:
+        return {
+            "bookings_preserved": 0,
+            "payments_preserved": 0,
+            "reviews_preserved": 0,
+        }
+
+    booking_ids = [
+        row[0] for row in db.query(Booking.booking_id)
+        .filter(Booking.guest_id == guest_id)
+        .all()
+    ]
+
+    return {
+        "bookings_preserved": len(booking_ids),
+        "payments_preserved": db.query(Payment).filter(Payment.booking_id.in_(booking_ids)).count() if booking_ids else 0,
+        "reviews_preserved": db.query(Review).filter(Review.booking_id.in_(booking_ids)).count() if booking_ids else 0,
+    }
+
+
+def reset_test_user_password(db: Session, email: str, new_password: str, admin_token: str) -> DevTestUserOperationResponse:
+    """
+    Development/testing utility: replace an explicitly identified user's password hash.
+    Existing refresh tokens are revoked so future use requires the new password.
+    """
+    assert_dev_auth_utils_allowed(admin_token)
+    user = _get_user_by_email(db, email)
+    counts = _related_record_counts(db, user)
+
+    user.password_hash = get_password_hash(new_password)
+    revoked_count = db.query(RefreshToken).filter(
+        RefreshToken.user_id == user.user_id,
+        RefreshToken.revoked == False
+    ).update({"revoked": True}, synchronize_session=False)
+    db.commit()
+    db.refresh(user)
+
+    return DevTestUserOperationResponse(
+        message="Development test user password reset. Existing refresh tokens were revoked.",
+        user_id=user.user_id,
+        email=user.email,
+        guest_id=user.guest_id,
+        refresh_tokens_revoked=revoked_count,
+        idempotency_records_removed=0,
+        **counts
+    )
+
+
+def delete_test_user_login(db: Session, email: str, confirm_email: str, admin_token: str) -> DevTestUserOperationResponse:
+    """
+    Development/testing utility: delete only the login user for an explicitly identified email.
+    Guest profile, bookings, payments, and reviews stay intact because they belong to guests/bookings.
+    """
+    assert_dev_auth_utils_allowed(admin_token)
+    normalized_email = email.strip().lower()
+    if confirm_email.strip().lower() != normalized_email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="confirm_email must match email.")
+
+    user = _get_user_by_email(db, normalized_email)
+    counts = _related_record_counts(db, user)
+    response = DevTestUserOperationResponse(
+        message="Development test user login deleted. Guest, bookings, payments, and reviews were preserved.",
+        user_id=user.user_id,
+        email=user.email,
+        guest_id=user.guest_id,
+        refresh_tokens_revoked=db.query(RefreshToken).filter(RefreshToken.user_id == user.user_id).count(),
+        idempotency_records_removed=db.query(PaymentIdempotency).filter(PaymentIdempotency.user_id == user.user_id).count(),
+        **counts
+    )
+
+    db.delete(user)
+    db.commit()
+    return response

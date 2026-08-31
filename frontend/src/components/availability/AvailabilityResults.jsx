@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bed, Users, Hotel, CheckCircle, Star, CalendarCheck, LogIn } from 'lucide-react';
+import { Bed, Users, Star, ArrowRight, LogIn, CheckCircle2, MapPin } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import EmptyState from '../common/EmptyState';
+import { getAvailabilityRoomImage } from '../../data/propertyMedia';
 
 /**
  * AvailabilityResults
@@ -35,7 +36,14 @@ const AvailabilityResults = ({ results }) => {
 
   const formatINR = (val) => {
     if (val === null || val === undefined) return null;
-    return `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    return `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0 })}`;
+  };
+
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const handleSelectRoom = (room) => {
@@ -62,7 +70,7 @@ const AvailabilityResults = ({ results }) => {
         state: {
           from: location.pathname + location.search,
           bookingIntent,
-          message: 'Please sign in to complete your room booking.',
+          message: 'Please sign in to complete your room reservation.',
         },
       });
       return;
@@ -73,121 +81,165 @@ const AvailabilityResults = ({ results }) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Search Summary Header */}
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-slate-800">
-        <div className="space-y-0.5">
-          <h3 className="text-sm font-extrabold text-blue-950 flex items-center space-x-2">
-            <CalendarCheck className="w-4 h-4 text-blue-600" />
-            <span>Search Results: {total_available} Room{total_available === 1 ? '' : 's'} Available</span>
+    <div className="space-y-8">
+      {/* ══════════════════════════════════════════════════════════
+          SEARCH SUMMARY CONTEXT STRIP
+          ══════════════════════════════════════════════════════════ */}
+      <div className="bg-[#F4EFEA] border border-[#E6DFD5] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] uppercase font-bold tracking-[0.24em] text-[#8A6240]">
+              Available Inventory
+            </span>
+            <span className="text-[#8A6240]">·</span>
+            <span className="text-xs font-semibold text-[#16231E]">
+              {total_available} {total_available === 1 ? 'Room' : 'Rooms'} Ready to Book
+            </span>
+          </div>
+          <h3 className="font-serif text-lg sm:text-xl font-normal text-[#16231E]">
+            {formatDateDisplay(check_in)} — {formatDateDisplay(check_out)}
           </h3>
-          <p className="text-xs text-blue-800">
-            Dates: <strong className="font-bold">{check_in}</strong> to{' '}
-            <strong className="font-bold">{check_out}</strong> ({nights} night{nights === 1 ? '' : 's'}) •{' '}
-            {guests_count} Guest{guests_count === 1 ? '' : 's'}
+          <p className="text-xs text-[#5A635F]">
+            {nights} {nights === 1 ? 'Night' : 'Nights'} · {guests_count} {guests_count === 1 ? 'Guest' : 'Guests'}
           </p>
         </div>
 
-        <div className="text-xs font-bold bg-white px-3 py-1.5 rounded-xl border border-blue-200 text-blue-700 self-start sm:self-auto">
-          PostgreSQL Range Verified
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#E6DFD5] text-[11px] font-semibold text-[#253B33] shadow-2xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Live Availability Confirmed</span>
+          </span>
         </div>
       </div>
 
-      {/* Login nudge for unauthenticated users */}
+      {/* Login notice for unauthenticated guests */}
       {!isAuthenticated && rooms.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center space-x-2.5 text-xs text-amber-800">
-          <LogIn className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>
-            <strong>Sign in</strong> to select a room and complete your booking reservation.
-          </span>
+        <div className="bg-[#FDFCF8] border border-[#E6DFD5] rounded-xl p-4 flex items-center justify-between gap-3 text-xs text-[#5A635F]">
+          <div className="flex items-center space-x-2.5">
+            <LogIn className="w-4 h-4 text-[#8A6240] shrink-0" />
+            <span>
+              Sign in or register to confirm your room reservation.
+            </span>
+          </div>
         </div>
       )}
 
-      {/* Results Grid or Empty State */}
+      {/* ══════════════════════════════════════════════════════════
+          RESULTS LIST OR EMPTY STATE
+          ══════════════════════════════════════════════════════════ */}
       {rooms.length === 0 ? (
         <EmptyState
-          title="No Available Rooms for Selected Dates"
-          message="All rooms for this property or criteria are currently booked for the chosen date range. Please try selecting different dates or adjusting your guest count."
+          title="No Available Rooms for These Dates"
+          message="All rooms for this destination are currently booked for your selected date range. Try shifting your dates by a few days or modifying guest counts to explore open accommodations."
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-6">
           {rooms.map((room) => {
             const nightlyRate = Number(room.nightly_rate);
             const totalCost = nightlyRate ? nightlyRate * nights : null;
+            const roomImage = getAvailabilityRoomImage(room);
 
             return (
-              <div
+              <article
                 key={room.room_id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between space-y-4"
+                className="group bg-white rounded-2xl border border-[#E6DFD5] overflow-hidden shadow-xs hover:shadow-md transition-shadow duration-300 grid grid-cols-1 md:grid-cols-12"
               >
-                <div className="space-y-3">
-                  {/* Property & Rating */}
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-1.5 text-slate-600 font-semibold truncate">
-                      <Hotel className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{room.property_name} ({room.property_city})</span>
-                    </div>
-                    <div className="flex items-center space-x-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md shrink-0">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
-                      <span className="text-[11px] font-bold text-amber-900">{room.property_star_rating}.0</span>
-                    </div>
-                  </div>
-
-                  {/* Room Type & Number */}
-                  <div>
-                    <h4 className="text-base font-extrabold text-slate-900">{room.room_type_name}</h4>
-                    <span className="inline-block text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded mt-1">
-                      Room #{room.room_number}
-                    </span>
-                  </div>
-
-                  {/* Capacity */}
-                  <div className="flex items-center space-x-4 text-xs text-slate-500 pt-1">
-                    <span className="flex items-center space-x-1">
-                      <Users className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Max {room.max_occupancy} Guests</span>
-                    </span>
-                    <span className="flex items-center space-x-1">
-                      <Bed className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Luxury Accommodation</span>
-                    </span>
+                {/* Room Image Banner / Thumbnail (md: 4 cols) */}
+                <div className="md:col-span-4 relative min-h-[200px] md:min-h-full overflow-hidden bg-[#F4EFEA]">
+                  <img
+                    src={roomImage}
+                    alt={room.room_type_name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute top-3 left-3 flex items-center space-x-1 bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-md text-white text-[11px] font-medium">
+                    <MapPin className="w-3 h-3 text-amber-200" />
+                    <span>{room.property_city}</span>
                   </div>
                 </div>
 
-                {/* Pricing & Selection */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                  <div>
-                    {room.nightly_rate ? (
-                      <div>
-                        <div className="text-lg font-black text-slate-900">
-                          {formatINR(room.nightly_rate)}
-                          <span className="text-xs font-normal text-slate-400"> / night</span>
-                        </div>
-                        {totalCost && (
-                          <div className="text-[11px] font-semibold text-emerald-700">
-                            Est. {formatINR(totalCost)} ({nights} nights)
-                          </div>
-                        )}
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          Final price confirmed by server at booking.
-                        </div>
+                {/* Room Details & Pricing (md: 8 cols) */}
+                <div className="md:col-span-8 p-6 sm:p-7 flex flex-col justify-between space-y-6">
+                  
+                  <div className="space-y-3">
+                    {/* Property header & Star rating */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs uppercase font-bold tracking-wider text-[#8A6240]">
+                        {room.property_name}
+                      </span>
+                      <div className="flex items-center space-x-1 text-amber-800 bg-[#F4EFEA] border border-[#E6DFD5] px-2 py-0.5 rounded text-[11px] font-bold">
+                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                        <span>{room.property_star_rating}.0 Star</span>
                       </div>
-                    ) : (
-                      <div className="text-xs font-bold text-slate-500">Standard Seasonal Rate</div>
-                    )}
+                    </div>
+
+                    {/* Room Type & Room number */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-serif text-xl sm:text-2xl font-normal text-[#16231E]">
+                          {room.room_type_name}
+                        </h4>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#5A635F] bg-[#F4EFEA] px-2.5 py-1 rounded-md">
+                          Room #{room.room_number}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#7A857F]">
+                        Quiet riverside sanctuary with bespoke furnishings and private garden access.
+                      </p>
+                    </div>
+
+                    {/* Specifications */}
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-[#5A635F] pt-1">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-[#8A6240]" />
+                        <span>Up to {room.max_occupancy} Guests</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Bed className="w-3.5 h-3.5 text-[#8A6240]" />
+                        <span>Luxury Bedding</span>
+                      </span>
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    id={`select-room-${room.room_id}`}
-                    onClick={() => handleSelectRoom(room)}
-                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-all cursor-pointer shrink-0"
-                  >
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    <span>{isAuthenticated ? 'Select Room' : 'Sign In & Book'}</span>
-                  </button>
+                  {/* Pricing & Selection Footer */}
+                  <div className="pt-4 border-t border-[#E6DFD5] flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                    <div>
+                      {room.nightly_rate ? (
+                        <div className="space-y-0.5">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-serif font-semibold text-[#16231E]">
+                              {formatINR(room.nightly_rate)}
+                            </span>
+                            <span className="text-xs text-[#7A857F]">/ night</span>
+                          </div>
+                          {totalCost && (
+                            <p className="text-xs font-medium text-[#253B33]">
+                              Total stay: {formatINR(totalCost)} ({nights} nights)
+                            </p>
+                          )}
+                          <p className="text-[10px] text-[#A0A8A3]">
+                            Inclusive of local taxes and retreat amenities.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-xs font-bold text-[#5A635F]">
+                          Standard Seasonal Rate
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      id={`select-room-${room.room_id}`}
+                      onClick={() => handleSelectRoom(room)}
+                      className="inline-flex items-center justify-center space-x-2 px-6 py-3 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#16231E] hover:bg-[#253B33] transition-colors cursor-pointer shrink-0 shadow-sm"
+                    >
+                      <span>{isAuthenticated ? 'Select Room' : 'Sign In & Reserve'}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-amber-200" />
+                    </button>
+                  </div>
+
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>

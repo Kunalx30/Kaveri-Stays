@@ -21,7 +21,7 @@ const PropertyModal = ({
       setFormData({
         name: property.name || '',
         city: property.city || '',
-        star_rating: property.star_rating || 4,
+        star_rating: property.star_rating ?? 4,
       });
     } else {
       setFormData({
@@ -143,7 +143,7 @@ const PropertyModal = ({
                   }`}
                 >
                   <Star className={`w-3.5 h-3.5 ${formData.star_rating >= star ? 'fill-amber-400 text-amber-500' : 'text-slate-300'}`} />
-                  <span>{star}★</span>
+                  <span>{star}</span>
                 </button>
               ))}
             </div>

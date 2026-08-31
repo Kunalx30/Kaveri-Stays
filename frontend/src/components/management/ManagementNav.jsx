@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Hotel, Grid, DoorClosed, Tag, BarChart3 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 
 const NAV_ITEMS = [
   { label: 'Overview', to: '/management', icon: LayoutDashboard, end: true },
@@ -13,12 +12,9 @@ const NAV_ITEMS = [
 ];
 
 const ManagementNav = () => {
-  const { user } = useAuth();
-  const isOwner = user?.role === 'owner';
-
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-2 shadow-xs mb-6 overflow-x-auto scrollbar-hide">
-      <div className="flex items-center space-x-1 min-w-max">
+    <div className="w-full bg-white border border-[#E6DFD5] rounded-2xl p-1.5 shadow-2xs mb-6 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center space-x-1.5 min-w-max">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
@@ -27,10 +23,10 @@ const ManagementNav = () => {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                `flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'bg-[#16231E] text-white shadow-xs'
+                    : 'text-[#5A635F] hover:text-[#16231E] hover:bg-[#F4EFEA]'
                 }`
               }
             >

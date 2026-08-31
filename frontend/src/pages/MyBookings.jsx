@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CalendarDays, Loader2, RefreshCw, SlidersHorizontal,
+  CalendarDays, Loader2, RefreshCw, SlidersHorizontal, Plus, Sparkles,
 } from 'lucide-react';
 import { listBookingsApi } from '../api/bookings';
 import { useAuth } from '../context/AuthContext';
@@ -13,10 +13,10 @@ import ErrorMessage from '../components/common/ErrorMessage';
  * Booking status filter options (matching actual backend BookingStatus enum values)
  */
 const STATUS_FILTERS = [
-  { label: 'All', value: '' },
+  { label: 'All Stays', value: '' },
   { label: 'Confirmed', value: 'confirmed' },
   { label: 'Checked In', value: 'checked_in' },
-  { label: 'Checked Out', value: 'checked_out' },
+  { label: 'Completed', value: 'checked_out' },
   { label: 'Cancelled', value: 'cancelled' },
   { label: 'No Show', value: 'no_show' },
 ];
@@ -25,13 +25,6 @@ const STATUS_FILTERS = [
  * MyBookings Page
  *
  * Protected route: /my-bookings
- *
- * Fetches bookings from GET /api/v1/bookings.
- * For Guest role: backend returns only their own bookings (ownership enforced server-side).
- * For Manager/Staff: backend returns only their assigned property's bookings.
- * For Owner: returns all bookings.
- *
- * Frontend status filter is purely UI (no security logic here — backend enforces ownership).
  */
 const MyBookings = () => {
   const { user } = useAuth();
@@ -48,12 +41,12 @@ const MyBookings = () => {
       const params = {};
       if (statusFilter) params.status = statusFilter;
       const data = await listBookingsApi(params);
-      setBookings(data);
+      setBookings(data || []);
     } catch (err) {
       if (err.response?.status === 401) {
         setError('Your session has expired. Please sign in again.');
       } else {
-        setError('Failed to load bookings. Please try again.');
+        setError('Failed to load your reservations. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -67,107 +60,171 @@ const MyBookings = () => {
   const getRoleDescription = () => {
     switch (user?.role) {
       case 'guest':
-        return 'Your personal hotel reservations are listed below.';
+        return 'Review upcoming stays, manage your reservations, and revisit your Kaveri Stays experiences.';
       case 'manager':
-        return 'Bookings within your assigned property are listed below.';
+        return 'Bookings within your assigned retreat are organized below.';
       case 'staff':
-        return 'Bookings for your assigned property are listed below.';
+        return 'Current guest reservations for your property.';
       case 'owner':
-        return 'All bookings across all properties are listed below.';
+        return 'All reservations across the Kaveri Stays retreat network.';
       default:
-        return 'Your bookings are listed below.';
+        return 'Review upcoming stays, manage your reservations, and revisit your Kaveri Stays experiences.';
     }
   };
 
+  // Calculate high-level stats from current loaded list
+  const totalCount = bookings.length;
+  const upcomingCount = bookings.filter((b) => b.status === 'confirmed' || b.status === 'checked_in').length;
+  const completedCount = bookings.filter((b) => b.status === 'checked_out').length;
+  const cancelledCount = bookings.filter((b) => b.status === 'cancelled').length;
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <div className="flex items-center space-x-2 text-blue-600 text-xs font-bold uppercase tracking-wider mb-1">
-            <CalendarDays className="w-4 h-4" />
-            <span>My Reservations</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">My Bookings</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">{getRoleDescription()}</p>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Link
-            to="/availability"
-            className="px-4 py-2 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors"
-          >
-            + New Booking
-          </Link>
-
-          <button
-            onClick={fetchBookings}
-            disabled={isLoading}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer disabled:opacity-50"
-            title="Refresh"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
-
-      {/* Status Filter Bar */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-hide">
-        <SlidersHorizontal className="w-4 h-4 text-slate-400 shrink-0" />
-        {STATUS_FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setStatusFilter(f.value)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
-              statusFilter === f.value
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      <ErrorMessage message={error} onDismiss={() => setError('')} />
-
-      {/* Loading Spinner */}
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center py-16 space-y-2">
-          <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
-          <p className="text-sm text-slate-400 animate-pulse">Loading your bookings...</p>
-        </div>
-      )}
-
-      {/* Bookings Grid */}
-      {!isLoading && !error && (
-        bookings.length === 0 ? (
-          <EmptyState
-            title={
-              statusFilter
-                ? `No ${statusFilter.replace(/_/g, ' ')} bookings found`
-                : 'No Bookings Found'
-            }
-            message={
-              statusFilter
-                ? 'Try selecting a different status filter above.'
-                : 'Your upcoming hotel reservations will appear here. Search availability to make your first booking!'
-            }
-          />
-        ) : (
-          <>
-            <p className="text-xs text-slate-500 font-semibold">
-              Showing <strong>{bookings.length}</strong> booking{bookings.length !== 1 ? 's' : ''}
-              {statusFilter && ` · Filtered: ${statusFilter.replace(/_/g, ' ')}`}
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {bookings.map((booking) => (
-                <BookingCard key={booking.booking_id} booking={booking} />
-              ))}
+    <div className="min-h-screen bg-[#FBF9F5] text-[#1A1E1C]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-10">
+        
+        {/* ══════════════════════════════════════════════════════════
+            SECTION 1: EDITORIAL HEADER
+            ══════════════════════════════════════════════════════════ */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 border-b border-[#E6DFD5]">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4EFEA] border border-[#E6DFD5] text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A6240]">
+              <Sparkles className="w-3 h-3 text-amber-600" />
+              <span>Your Stays</span>
             </div>
-          </>
-        )
-      )}
+
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight text-[#16231E] leading-[1.15]">
+              Your reservations, <br className="hidden sm:inline" />
+              <span className="italic text-[#253B33]">beautifully organised.</span>
+            </h1>
+
+            <p className="text-sm sm:text-[15px] text-[#5A635F] leading-relaxed font-light">
+              {getRoleDescription()}
+            </p>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="flex items-center gap-3 self-start lg:self-auto shrink-0">
+            <Link
+              to="/availability"
+              className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#16231E] hover:bg-[#253B33] transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4 text-amber-200" />
+              <span>Explore New Stays</span>
+            </Link>
+
+            <button
+              onClick={fetchBookings}
+              disabled={isLoading}
+              className="p-2.5 rounded-xl text-[#5A635F] hover:text-[#16231E] bg-white hover:bg-[#F4EFEA] border border-[#E6DFD5] transition-colors cursor-pointer disabled:opacity-50"
+              title="Refresh reservations"
+              aria-label="Refresh reservations"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════
+            SECTION 2: SUMMARY STATS STRIP
+            ══════════════════════════════════════════════════════════ */}
+        {!isLoading && !error && bookings.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 rounded-2xl bg-[#F4EFEA] border border-[#E6DFD5]">
+            <div className="space-y-0.5">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#7A857F]">Total Stays</span>
+              <p className="font-serif text-2xl font-normal text-[#16231E]">{totalCount}</p>
+            </div>
+
+            <div className="space-y-0.5 sm:border-l sm:border-[#E6DFD5] sm:pl-4">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#1B4D3E]">Upcoming / Active</span>
+              <p className="font-serif text-2xl font-normal text-[#1B4D3E]">{upcomingCount}</p>
+            </div>
+
+            <div className="space-y-0.5 border-t sm:border-t-0 sm:border-l border-[#E6DFD5] pt-3 sm:pt-0 sm:pl-4">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#555E58]">Completed</span>
+              <p className="font-serif text-2xl font-normal text-[#555E58]">{completedCount}</p>
+            </div>
+
+            <div className="space-y-0.5 border-t sm:border-t-0 sm:border-l border-[#E6DFD5] pt-3 sm:pt-0 sm:pl-4">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#8C3A3A]">Cancelled</span>
+              <p className="font-serif text-2xl font-normal text-[#8C3A3A]">{cancelledCount}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            SECTION 3: STATUS FILTERS
+            ══════════════════════════════════════════════════════════ */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex items-center gap-1.5 text-xs text-[#8A6240] font-semibold uppercase tracking-wider pr-2 shrink-0">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Filter</span>
+          </div>
+
+          {STATUS_FILTERS.map((f) => {
+            const isActive = statusFilter === f.value;
+            return (
+              <button
+                key={f.value}
+                onClick={() => setStatusFilter(f.value)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  isActive
+                    ? 'bg-[#16231E] text-white shadow-xs'
+                    : 'bg-white text-[#5A635F] hover:text-[#16231E] hover:bg-[#F4EFEA] border border-[#E6DFD5]'
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Error Notification */}
+        <ErrorMessage message={error} onDismiss={() => setError('')} />
+
+        {/* ══════════════════════════════════════════════════════════
+            SECTION 4: LOADING & BOOKINGS LIST
+            ══════════════════════════════════════════════════════════ */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-20 space-y-3">
+            <Loader2 className="w-8 h-8 text-[#253B33] animate-spin" />
+            <p className="text-sm text-[#5A635F] font-medium">Finding your reservations...</p>
+          </div>
+        )}
+
+        {!isLoading && !error && (
+          bookings.length === 0 ? (
+            <div className="py-8">
+              <EmptyState
+                icon={CalendarDays}
+                title="No stays booked yet"
+                message="Your next Kaveri Stays experience is waiting to be discovered."
+                actionLabel="Explore Stays"
+                onAction={() => window.location.assign('/properties')}
+              />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#7A857F]">
+                <span>
+                  Your Reservations · {bookings.length} {bookings.length === 1 ? 'Booking' : 'Bookings'}
+                </span>
+                {statusFilter && (
+                  <span className="text-[#8A6240]">
+                    Filtered: {statusFilter.replace(/_/g, ' ')}
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {bookings.map((booking) => (
+                  <BookingCard key={booking.booking_id} booking={booking} />
+                ))}
+              </div>
+            </div>
+          )
+        )}
+
+      </div>
     </div>
   );
 };

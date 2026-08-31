@@ -7,7 +7,11 @@ import apiClient from './client';
  */
 
 export const getPropertiesApi = async (params = {}) => {
-  const response = await apiClient.get('/properties', { params });
+  const queryParams = typeof params === 'string' ? { city: params } : params;
+  const cleanParams = Object.fromEntries(
+    Object.entries(queryParams).filter(([, v]) => v != null && v !== '')
+  );
+  const response = await apiClient.get('/properties', { params: cleanParams });
   return response.data;
 };
 
