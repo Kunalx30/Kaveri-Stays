@@ -54,11 +54,6 @@ const Login = () => {
     }
   };
 
-  const setDemoCredentials = (email, password = 'Password@123') => {
-    setFormData({ email, password });
-    setError('');
-  };
-
   return (
     <div className="min-h-screen bg-[#FBF9F5] text-[#1A1E1C] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl w-full bg-white rounded-3xl border border-[#E6DFD5] shadow-xs overflow-hidden grid grid-cols-1 lg:grid-cols-12">
@@ -185,44 +180,6 @@ const Login = () => {
               )}
             </button>
           </form>
-
-          {/* Fast-Fill Demo Roles */}
-          <div className="pt-4 border-t border-[#E6DFD5] space-y-2">
-            <div className="flex items-center space-x-1 text-[10px] font-bold text-[#8A6240] uppercase tracking-wider">
-              <Sparkles className="w-3 h-3 text-amber-600" />
-              <span>Fast-fill Demo Accounts:</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setDemoCredentials('guest.demo@kaveristays.com')}
-                className="px-2.5 py-1.5 rounded-lg border border-[#E6DFD5] bg-[#FBF9F5] hover:bg-[#F4EFEA] text-[#16231E] font-medium text-left truncate cursor-pointer transition-colors"
-              >
-                Guest (Demo)
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoCredentials('manager.riverside@kaveristays.com')}
-                className="px-2.5 py-1.5 rounded-lg border border-[#E6DFD5] bg-[#FBF9F5] hover:bg-[#F4EFEA] text-[#16231E] font-medium text-left truncate cursor-pointer transition-colors"
-              >
-                Manager (Prop 1)
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoCredentials('staff.riverside@kaveristays.com')}
-                className="px-2.5 py-1.5 rounded-lg border border-[#E6DFD5] bg-[#FBF9F5] hover:bg-[#F4EFEA] text-[#16231E] font-medium text-left truncate cursor-pointer transition-colors"
-              >
-                Staff (Prop 1)
-              </button>
-              <button
-                type="button"
-                onClick={() => setDemoCredentials('owner@kaveristays.com')}
-                className="px-2.5 py-1.5 rounded-lg border border-[#E6DFD5] bg-[#FBF9F5] hover:bg-[#F4EFEA] text-[#16231E] font-medium text-left truncate cursor-pointer transition-colors"
-              >
-                Owner
-              </button>
-            </div>
-          </div>
 
           <div className="text-center text-xs text-[#5A635F]">
             Don't have a guest account yet?{' '}
