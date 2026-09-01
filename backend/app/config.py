@@ -14,6 +14,10 @@ class Settings(BaseSettings):
 
     # PostgreSQL Database URL
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/kaveri_stays"
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE_SECONDS: int = 1800
 
     # JWT Settings
     JWT_SECRET_KEY: str = "default_insecure_secret_key_change_in_env_file_please"
