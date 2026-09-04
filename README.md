@@ -1,38 +1,59 @@
-# Kaveri Stays Hotel Booking Management System
+# 🏞️ Kaveri Stays
 
-Kaveri Stays is a full-stack hotel booking and property management system for public property discovery, guest reservations, payments, reviews, staff operations, management CRUD, and analytics reporting.
+**A full-stack hotel booking and property management system** — built for public property discovery, guest reservations, payments, reviews, staff operations, management CRUD, and analytics reporting.
 
-## Features
+🔗 **Live App:** [https://kaveri-stays.nyrvexa.in/](https://kaveri-stays.nyrvexa.in/)
 
-- Public property listing, property details, room type display, and availability search.
-- Guest authentication with JWT access tokens, refresh token rotation, protected routes, booking history, payments, and reviews.
-- Booking lifecycle support for creation, details, cancellation, check-in, check-out, and no-show operations.
-- Payment checkout, payment details, payment history, and ownership isolation.
-- Verified reviews with rating display, submission, edit, and delete flows.
-- Staff portal for arrivals, departures, in-house guests, overdue check-ins, and booking operations.
-- Management tools for properties, room types, rooms, and rate plans.
-- Analytics dashboard for KPIs, booking status, revenue, occupancy, ratings, and property performance.
+![React](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-## User Roles
+---
 
-- Guest: browse properties, search availability, create bookings, manage own bookings, make payments, and manage own reviews.
-- Staff: access staff operations for authorized property bookings.
-- Manager: access staff operations, assigned-property management functions, and analytics where permitted by the backend.
-- Owner: access staff operations, cross-property management, and analytics.
+## 📸 Screenshots
 
-## Technology Stack
+| | |
+|---|---|
+| ![Screenshot 1](./Screenshots/Screenshot%202026-09-04%20165647.png) | ![Screenshot 2](./Screenshots/Screenshot%202026-09-04%20165719.png) |
 
-- Frontend: React, Vite, React Router, Axios, Tailwind CSS, lucide-react.
-- Backend: FastAPI, SQLAlchemy, PostgreSQL, Pydantic, JWT authentication.
-- Testing: pytest for backend regression tests, Vite production build for frontend verification.
+---
 
-## Architecture
+## 📖 Overview
 
-React/Vite frontend -> Axios API client -> FastAPI backend -> SQLAlchemy -> PostgreSQL database.
+Kaveri Stays is an end-to-end riverside villa/hotel booking platform that supports the complete guest journey — from browsing properties and checking availability, to booking, paying, and reviewing a stay — alongside the operational tooling staff, managers, and owners need to run properties day to day.
 
-The frontend reads `VITE_API_BASE_URL` and expects the backend v1 API prefix. The backend reads environment configuration with Pydantic settings from `backend/.env` when present.
+## ✨ Features
 
-## Project Structure
+- 🏨 **Public Discovery** — property listings, property details, room type display, and availability search.
+- 🔐 **Guest Authentication** — JWT access tokens with refresh token rotation, protected routes, booking history, payments, and reviews.
+- 📅 **Booking Lifecycle** — creation, details, cancellation, check-in, check-out, and no-show handling.
+- 💳 **Payments** — checkout flow, payment details, payment history, and strict ownership isolation.
+- ⭐ **Verified Reviews** — rating display, submission, edit, and delete flows.
+- 🧑‍💼 **Staff Portal** — arrivals, departures, in-house guests, overdue check-ins, and booking operations.
+- 🛠️ **Management Tools** — properties, room types, rooms, and rate plans.
+- 📊 **Analytics Dashboard** — KPIs, booking status, revenue, occupancy, ratings, and property performance.
+
+## 👥 User Roles
+
+| Role | Access |
+|---|---|
+| **Guest** | Browse properties, search availability, create bookings, manage own bookings, make payments, manage own reviews |
+| **Staff** | Staff operations for authorized property bookings |
+| **Manager** | Staff operations, assigned-property management functions, analytics where permitted |
+| **Owner** | Staff operations, cross-property management, and full analytics |
+
+## 🧰 Technology Stack
+
+**Frontend:** React, Vite, React Router, Axios, Tailwind CSS, lucide-react
+**Backend:** FastAPI, SQLAlchemy, PostgreSQL, Pydantic, JWT authentication
+**Testing:** pytest (backend regression tests), Vite production build (frontend verification)
+
+## 🏗️ Architecture
+
+The frontend reads `VITE_API_BASE_URL` and expects the backend's `v1` API prefix. The backend reads environment configuration via Pydantic settings from `backend/.env` when present.
+
+## 📁 Project Structure
 
 ```text
 backend/
@@ -62,9 +83,9 @@ frontend/
 README.md
 ```
 
-## Environment Variables
+## ⚙️ Environment Variables
 
-Backend example: `backend/.env.example`
+### Backend — `backend/.env.example`
 
 ```env
 DATABASE_URL=postgresql+psycopg://postgres:your_password@localhost:5432/kaveri_stays
@@ -82,15 +103,15 @@ ENABLE_DEV_AUTH_UTILS=false
 DEV_AUTH_UTILS_TOKEN=replace_with_local_dev_only_token_at_least_16_chars
 ```
 
-Frontend example: `frontend/.env.example`
+### Frontend — `frontend/.env.example`
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 ```
 
-Do not commit real `.env` files or production secrets.
+> ⚠️ Do not commit real `.env` files or production secrets.
 
-## Development Test Users
+## 🧪 Development Test Users
 
 Unknown existing passwords cannot be recovered from bcrypt hashes. For local development/testing, enable guarded utilities only in `backend/.env`:
 
@@ -102,16 +123,16 @@ DEV_AUTH_UTILS_TOKEN=choose_a_local_secret_at_least_16_chars
 
 Then use Swagger at `/api/v1/docs`:
 
-- `POST /api/v1/auth/dev/test-users/reset-password` resets an explicitly identified user's password and revokes existing refresh tokens.
-- `DELETE /api/v1/auth/dev/test-users` deletes only the explicitly identified login user after `confirm_email` matches. The linked guest profile, bookings, payments, and reviews are preserved.
+- `POST /api/v1/auth/dev/test-users/reset-password` — resets an explicitly identified user's password and revokes existing refresh tokens.
+- `DELETE /api/v1/auth/dev/test-users` — deletes only the explicitly identified login user after `confirm_email` matches. The linked guest profile, bookings, payments, and reviews are preserved.
 
-These endpoints return 404 unless the utilities are enabled, a dev/test environment is active, and the admin token matches.
+These endpoints return `404` unless the utilities are enabled, a dev/test environment is active, and the admin token matches.
 
-## PostgreSQL Setup
+## 🗄️ PostgreSQL Setup
 
-Create a PostgreSQL database named `kaveri_stays` or update `DATABASE_URL` to match your local database. Apply the SQL scripts in `database/` according to the current schema/migration needs, then seed demo data if desired.
+Create a PostgreSQL database named `kaveri_stays`, or update `DATABASE_URL` to match your local database. Apply the SQL scripts in `database/` according to the current schema/migration needs, then seed demo data if desired.
 
-## Backend Setup
+## 🚀 Backend Setup
 
 ```bash
 cd backend
@@ -124,12 +145,12 @@ uvicorn app.main:app --reload
 
 Backend API documentation is available at:
 
-- Swagger UI: `http://localhost:8000/api/v1/docs`
-- ReDoc: `http://localhost:8000/api/v1/redoc`
-- Health check: `http://localhost:8000/health`
-- Readiness check: `http://localhost:8000/health/ready`
+- **Swagger UI:** `http://localhost:8000/api/v1/docs`
+- **ReDoc:** `http://localhost:8000/api/v1/redoc`
+- **Health check:** `http://localhost:8000/health`
+- **Readiness check:** `http://localhost:8000/health/ready`
 
-## Frontend Setup
+## 💻 Frontend Setup
 
 ```bash
 cd frontend
@@ -140,68 +161,87 @@ npm run dev
 
 The frontend runs at `http://localhost:5173` by default.
 
-## Major Frontend Routes
+## 🗺️ Major Frontend Routes
 
-- `/`
-- `/properties`
-- `/properties/:propertyId`
-- `/properties/:propertyId/availability`
-- `/availability`
-- `/login`
-- `/register`
-- `/dashboard`
-- `/my-bookings`
-- `/bookings/create`
-- `/bookings/:bookingId`
-- `/bookings/:bookingId/payment`
-- `/my-payments`
-- `/payments/:paymentId`
-- `/my-reviews`
-- `/bookings/:bookingId/review`
-- `/reviews/:reviewId/edit`
-- `/staff`
-- `/staff/bookings`
-- `/staff/bookings/:bookingId`
-- `/management`
-- `/management/properties`
-- `/management/room-types`
-- `/management/rooms`
-- `/management/rate-plans`
-- `/analytics`
-- `/unauthorized`
+| Route | Description |
+|---|---|
+| `/` | Landing page |
+| `/properties` | Property listings |
+| `/properties/:propertyId` | Property details |
+| `/properties/:propertyId/availability` | Property-specific availability |
+| `/availability` | Availability search |
+| `/login` | Guest login |
+| `/register` | Guest registration |
+| `/dashboard` | Guest dashboard |
+| `/my-bookings` | Guest booking history |
+| `/bookings/create` | Create a booking |
+| `/bookings/:bookingId` | Booking details |
+| `/bookings/:bookingId/payment` | Booking payment |
+| `/my-payments` | Payment history |
+| `/payments/:paymentId` | Payment details |
+| `/my-reviews` | Guest reviews |
+| `/bookings/:bookingId/review` | Submit a review |
+| `/reviews/:reviewId/edit` | Edit a review |
+| `/staff` | Staff portal |
+| `/staff/bookings` | Staff booking operations |
+| `/staff/bookings/:bookingId` | Staff booking details |
+| `/management` | Management hub |
+| `/management/properties` | Manage properties |
+| `/management/room-types` | Manage room types |
+| `/management/rooms` | Manage rooms |
+| `/management/rate-plans` | Manage rate plans |
+| `/analytics` | Analytics dashboard |
+| `/unauthorized` | Unauthorized access page |
 
-## Testing
+## ✅ Testing
 
-Frontend production build:
+**Frontend production build:**
 
 ```bash
 cd frontend
 npm run build
 ```
 
-Backend regression tests:
+**Backend regression tests:**
 
 ```bash
 cd backend
 pytest tests/ -v --show-capture=no
 ```
 
-## Deployment Preparation
+## 🌐 Deployment
 
 Recommended production shape:
 
 ```text
 React/Vite static frontend
-  -> HTTPS
+  → HTTPS
 FastAPI backend
-  -> private PostgreSQL database
+  → private PostgreSQL database
 ```
 
-For deployment, set a production `VITE_API_BASE_URL`, a secure `JWT_SECRET_KEY`, a production `DATABASE_URL`, and explicit `CORS_ORIGINS` for the frontend domain. Keep PostgreSQL private and do not deploy with development fallback secrets.
+For deployment, set:
 
-## Future Improvements
+- A production `VITE_API_BASE_URL`
+- A secure `JWT_SECRET_KEY`
+- A production `DATABASE_URL`
+- Explicit `CORS_ORIGINS` for the frontend domain
 
-- Add browser-based end-to-end test automation for the main guest, staff, manager, and owner journeys.
-- Add frontend lint rules once the current UI stabilizes.
-- Add CI for `npm run build` and backend pytest.
-- Add production deployment manifests after the hosting target is selected.
+Keep PostgreSQL private and do not deploy with development fallback secrets.
+
+**Live deployment:** [https://kaveri-stays.nyrvexa.in/](https://kaveri-stays.nyrvexa.in/)
+
+## 🔮 Future Improvements
+
+- [ ] Add browser-based end-to-end test automation for the main guest, staff, manager, and owner journeys.
+- [ ] Add frontend lint rules once the current UI stabilizes.
+- [ ] Add CI for `npm run build` and backend pytest.
+- [ ] Add production deployment manifests after the hosting target is selected.
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+<p align="center">Built by <a href="https://kunalx30.vercel.app">Kunal Chandelkar</a></p>
